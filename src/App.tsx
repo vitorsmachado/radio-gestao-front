@@ -6,9 +6,13 @@ import Login from './pages/login/Login'
 
 // Clientes
 import ClientesLista from './pages/clientes/ClientesLista'
+import ClienteForm from './pages/clientes/ClienteForm'
+import ClienteDetalhe from './pages/clientes/ClienteDetalhe'
 
 // Ordens de Serviço
 import OsLista from './pages/os/OsLista'
+import OsForm from './pages/os/OsForm'
+import OsDetalhe from './pages/os/OsDetalhe'
 
 function AuthWrapper() {
   return (
@@ -31,7 +35,11 @@ const router = createBrowserRouter([
             element: <AppLayout />,
             children: [
               { path: '/os', element: <OsLista /> },
+              { path: '/os/novo', element: <OsForm /> },
+              { path: '/os/:id', element: <OsDetalhe /> },
               { path: '/clientes', element: <ClientesLista /> },
+              { path: '/clientes/novo', element: <ClienteForm /> },
+              { path: '/clientes/:id', element: <ClienteDetalhe /> },
               { path: '/', element: <Navigate to="/clientes" replace /> },
             ],
           },
