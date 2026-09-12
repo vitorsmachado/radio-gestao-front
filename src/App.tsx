@@ -14,6 +14,9 @@ import OsLista from './pages/os/OsLista'
 import OsForm from './pages/os/OsForm'
 import OsDetalhe from './pages/os/OsDetalhe'
 
+// Estoque
+import PecasLista from './pages/estoque/PecasLista'
+
 function AuthWrapper() {
   return (
     <AuthProvider>
@@ -40,6 +43,7 @@ const router = createBrowserRouter([
               { path: '/clientes', element: <ClientesLista /> },
               { path: '/clientes/novo', element: <ClienteForm /> },
               { path: '/clientes/:id', element: <ClienteDetalhe /> },
+              { path: '/estoque/pecas', element: <PecasLista /> },
               { path: '/', element: <Navigate to="/clientes" replace /> },
             ],
           },

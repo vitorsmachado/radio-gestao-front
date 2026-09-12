@@ -1,3 +1,5 @@
+export type { PageResponse } from './pagination'
+
 export type TipoPessoa = 'PESSOA_FISICA' | 'PESSOA_JURIDICA'
 export type StatusCliente = 'ATIVO' | 'INATIVO' | 'BLOQUEADO'
 
@@ -51,13 +53,4 @@ export interface ClienteCreateRequest {
   nomeFantasia?: string
   inscricaoEstadual?: string
   endereco?: EnderecoDTO
-}
-
-// Formato de página do Spring Data (Page<T>)
-export interface PageResponse<T> {
-  content: T[]
-  totalElements: number
-  totalPages: number
-  number: number
-  size: number
 }

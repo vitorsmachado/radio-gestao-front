@@ -71,6 +71,18 @@ export default function AppLayout() {
             </svg>
           ),
         },
+        {
+          label: 'Estoque',
+          path: '/estoque/pecas',
+          roles: ['ADMIN', 'TECNICO', 'AUXILIAR'],
+          icon: (
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="1" y="8" width="14" height="6" rx="1" />
+              <rect x="3" y="4" width="10" height="4" />
+              <rect x="5" y="2" width="6" height="2" />
+            </svg>
+          ),
+        },
       ],
     },
     {
