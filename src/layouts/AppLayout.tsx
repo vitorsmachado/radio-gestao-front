@@ -83,6 +83,19 @@ export default function AppLayout() {
             </svg>
           ),
         },
+        {
+          label: 'Catálogo',
+          path: '/estoque/catalogo',
+          roles: ['ADMIN', 'TECNICO', 'AUXILIAR'],
+          icon: (
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M3 2h10v12H3z" />
+              <line x1="6" y1="5" x2="11" y2="5" />
+              <line x1="6" y1="8" x2="11" y2="8" />
+              <line x1="6" y1="11" x2="9" y2="11" />
+            </svg>
+          ),
+        },
       ],
     },
     {

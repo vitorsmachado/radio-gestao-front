@@ -1,5 +1,5 @@
 import api from './axios'
-import type { CatalogoModeloCreateRequest, CatalogoModeloDTO } from '../types/catalogo'
+import type { CatalogoModeloCreateRequest, CatalogoModeloDTO, CatalogoModeloUpdateRequest } from '../types/catalogo'
 import type { PageResponse } from '../types/pagination'
 import type { TipoItem } from '../types/os'
 
@@ -12,4 +12,10 @@ export const catalogoApi = {
 
   criar: (data: CatalogoModeloCreateRequest) =>
     api.post<CatalogoModeloDTO>('/v1/catalogo-modelos', data).then(r => r.data),
+
+  atualizar: (id: string, data: CatalogoModeloUpdateRequest) =>
+    api.put<CatalogoModeloDTO>(`/v1/catalogo-modelos/${id}`, data).then(r => r.data),
+
+  deletar: (id: string) =>
+    api.delete(`/v1/catalogo-modelos/${id}`),
 }
