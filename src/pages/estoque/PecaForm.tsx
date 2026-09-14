@@ -30,9 +30,14 @@ export default function PecaForm({ peca, onClose, onSalvo }: Props) {
   const [modelosCompativeis, setModelosCompativeis] = useState<CatalogoModeloDTO[]>(peca?.modelosCompativeis ?? [])
   const [erro, setErro] = useState<string | null>(null)
 
+  const [catalogoSelecionado, setCatalogoSelecionado] = useState<CatalogoModeloDTO | null>(null)
+  const [buscaCatalogo, setBuscaCatalogo] = useState('')
+  const [sugestoesCatalogo, setSugestoesCatalogo] = useState<CatalogoModeloDTO[]>([])
+
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     defaultValues: {
@@ -48,6 +53,34 @@ export default function PecaForm({ peca, onClose, onSalvo }: Props) {
   useEffect(() => {
     catalogoApi.listarMarcas().then(setMarcas).catch(() => setMarcas([]))
   }, [])
+
+  useEffect(() => {
+    if (editando || catalogoSelecionado || buscaCatalogo.trim().length < 2) {
+      setSugestoesCatalogo([])
+      return
+    }
+    const t = setTimeout(() => {
+      catalogoApi
+        .listar({ busca: buscaCatalogo.trim() })
+        .then(res => setSugestoesCatalogo(res.content))
+        .catch(() => setSugestoesCatalogo([]))
+    }, 300)
+    return () => clearTimeout(t)
+  }, [editando, catalogoSelecionado, buscaCatalogo])
+
+  const selecionarDoCatalogo = (item: CatalogoModeloDTO) => {
+    setCatalogoSelecionado(item)
+    setValue('marca', item.marca)
+    setValue('modelo', item.modelo)
+    setBuscaCatalogo('')
+    setSugestoesCatalogo([])
+  }
+
+  const limparCatalogoSelecionado = () => {
+    setCatalogoSelecionado(null)
+    setValue('marca', '')
+    setValue('modelo', '')
+  }
 
   const reconciliarModelosCompativeis = async () => {
     if (!peca) return
@@ -78,6 +111,7 @@ export default function PecaForm({ peca, onClose, onSalvo }: Props) {
           descricao: d.descricao.trim(),
           quantidadeDisponivel: Number(d.quantidadeDisponivel) || 0,
           quantidadeMinima: d.quantidadeMinima ? Number(d.quantidadeMinima) : undefined,
+          catalogoModeloId: catalogoSelecionado?.id,
           marca: d.marca.trim() || undefined,
           modelo: d.modelo.trim() || undefined,
           modelosCompativeisIds: modelosCompativeis.map(m => m.id),
@@ -120,19 +154,52 @@ export default function PecaForm({ peca, onClose, onSalvo }: Props) {
         </div>
 
         {!editando && (
-          <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
-            <div className="form-field">
-              <label className="form-label">Marca</label>
-              <input className="form-input" list="marcas-sugeridas" {...register('marca')} />
-              <datalist id="marcas-sugeridas">
-                {marcas.map(m => <option key={m} value={m} />)}
-              </datalist>
+          <>
+            <div className="form-field" style={{ marginBottom: 12, position: 'relative' }}>
+              <label className="form-label">Buscar no catálogo</label>
+              {catalogoSelecionado ? (
+                <div className="form-input" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{catalogoSelecionado.marca} {catalogoSelecionado.modelo}</span>
+                  <span style={{ cursor: 'pointer', color: 'var(--text3)' }} onClick={limparCatalogoSelecionado}>✕</span>
+                </div>
+              ) : (
+                <input
+                  className="form-input"
+                  placeholder="Buscar por marca, modelo ou descrição já cadastrados..."
+                  value={buscaCatalogo}
+                  onChange={e => setBuscaCatalogo(e.target.value)}
+                />
+              )}
+              {!catalogoSelecionado && sugestoesCatalogo.length > 0 && (
+                <div className="section-card" style={{ position: 'absolute', zIndex: 10, width: '100%', marginTop: 4, padding: 6 }}>
+                  {sugestoesCatalogo.map(item => (
+                    <div
+                      key={item.id}
+                      style={{ padding: '6px 4px', cursor: 'pointer', fontSize: 13 }}
+                      onClick={() => selecionarDoCatalogo(item)}
+                    >
+                      {item.marca} {item.modelo}
+                      <span style={{ color: 'var(--text3)' }}> · {item.tipoItem}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="form-field">
-              <label className="form-label">Modelo</label>
-              <input className="form-input" {...register('modelo')} />
+
+            <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
+              <div className="form-field">
+                <label className="form-label">Marca</label>
+                <input className="form-input" list="marcas-sugeridas" disabled={!!catalogoSelecionado} {...register('marca')} />
+                <datalist id="marcas-sugeridas">
+                  {marcas.map(m => <option key={m} value={m} />)}
+                </datalist>
+              </div>
+              <div className="form-field">
+                <label className="form-label">Modelo</label>
+                <input className="form-input" disabled={!!catalogoSelecionado} {...register('modelo')} />
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
