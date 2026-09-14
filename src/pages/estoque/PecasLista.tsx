@@ -3,6 +3,7 @@ import { catalogoApi } from '../../api/catalogo'
 import { pecasApi } from '../../api/pecas'
 import PecaForm from './PecaForm'
 import MovimentacaoModal, { type TipoMovimentacao } from './MovimentacaoModal'
+import HistoricoMovimentacaoModal from './HistoricoMovimentacaoModal'
 import type { CatalogoModeloDTO } from '../../types/catalogo'
 import type { PecaDTO } from '../../types/peca'
 import type { PageResponse } from '../../types/pagination'
@@ -23,6 +24,7 @@ export default function PecasLista() {
   const [modalNovo, setModalNovo] = useState(false)
   const [modalEditar, setModalEditar] = useState<PecaDTO | null>(null)
   const [modalMovimentacao, setModalMovimentacao] = useState<{ peca: PecaDTO; tipo: TipoMovimentacao } | null>(null)
+  const [modalHistorico, setModalHistorico] = useState<PecaDTO | null>(null)
 
   const mudarAba = (novaAba: Aba) => {
     setAba(novaAba)
@@ -167,10 +169,11 @@ export default function PecasLista() {
                   </td>
                   <td>{criticidadeBadge(peca)}</td>
                   <td className="no-print">
-                    <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                    <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                       <button className="btn btn-sm btn-green" title="Entrada" onClick={() => setModalMovimentacao({ peca, tipo: 'entrada' })}>+</button>
                       <button className="btn btn-sm btn-danger" title="Saída" onClick={() => setModalMovimentacao({ peca, tipo: 'saida' })}>−</button>
                       <button className="btn btn-sm" title="Ajustar saldo" onClick={() => setModalMovimentacao({ peca, tipo: 'ajuste' })}>Ajustar</button>
+                      <button className="btn btn-sm btn-ghost" title="Histórico de movimentação" onClick={() => setModalHistorico(peca)}>Histórico</button>
                       <button className="btn btn-sm btn-ghost" onClick={() => setModalEditar(peca)}>Editar</button>
                     </div>
                   </td>
@@ -218,6 +221,13 @@ export default function PecasLista() {
           tipo={modalMovimentacao.tipo}
           onClose={() => setModalMovimentacao(null)}
           onSalvo={() => { setModalMovimentacao(null); carregar() }}
+        />
+      )}
+
+      {modalHistorico && (
+        <HistoricoMovimentacaoModal
+          peca={modalHistorico}
+          onClose={() => setModalHistorico(null)}
         />
       )}
     </div>

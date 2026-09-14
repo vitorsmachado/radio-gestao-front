@@ -1,5 +1,5 @@
 import api from './axios'
-import type { CriticidadeEstoque, PecaCreateRequest, PecaDTO, PecaUpdateRequest } from '../types/peca'
+import type { CriticidadeEstoque, MovimentacaoEstoqueDTO, PecaCreateRequest, PecaDTO, PecaUpdateRequest } from '../types/peca'
 import type { PageResponse } from '../types/pagination'
 
 export const pecasApi = {
@@ -26,4 +26,7 @@ export const pecasApi = {
 
   ajustar: (id: string, quantidade: number, motivo?: string) =>
     api.put<number>(`/v1/estoque/pecas/${id}/ajuste`, { quantidade, motivo }).then(r => r.data),
+
+  listarMovimentacoes: (id: string, page = 0) =>
+    api.get<PageResponse<MovimentacaoEstoqueDTO>>(`/v1/estoque/pecas/${id}/movimentacoes`, { params: { page } }).then(r => r.data),
 }

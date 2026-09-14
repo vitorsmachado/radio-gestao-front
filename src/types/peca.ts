@@ -37,3 +37,14 @@ export interface PecaUpdateRequest {
   observacoes?: string
   localizacaoFisica?: string
 }
+
+export type TipoMovimentacaoEstoque = 'ENTRADA' | 'SAIDA' | 'AJUSTE'
+
+export interface MovimentacaoEstoqueDTO {
+  id: string
+  tipoMovimentacao: TipoMovimentacaoEstoque
+  saldoAnterior: number
+  saldoNovo: number
+  motivo?: string
+  dataCriacao?: string
+}
