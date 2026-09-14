@@ -1,7 +1,7 @@
 import type { CatalogoModeloDTO } from './catalogo'
 
 export type StatusItemEstoque = 'ATIVO' | 'INATIVO' | 'OBSOLETO'
-export type CriticidadeEstoque = 'EM_FALTA' | 'ESTOQUE_BAIXO'
+export type CriticidadeEstoque = 'EM_FALTA' | 'ESTOQUE_BAIXO' | 'CRITICO'
 
 export interface PecaDTO {
   id: string
@@ -11,6 +11,8 @@ export interface PecaDTO {
   quantidadeMinima?: number
   status: StatusItemEstoque
   catalogoModeloId?: string
+  observacoes?: string
+  localizacaoFisica?: string
   emFalta: boolean
   estoqueBaixo: boolean
   modelosCompativeis: CatalogoModeloDTO[]
@@ -29,6 +31,7 @@ export interface PecaCreateRequest {
 }
 
 export interface PecaUpdateRequest {
+  codigo?: string
   descricao?: string
   quantidadeMinima?: number
   observacoes?: string

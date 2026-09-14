@@ -2,42 +2,59 @@ import { useEffect, useState } from 'react'
 import { catalogoApi } from '../../api/catalogo'
 import { pecasApi } from '../../api/pecas'
 import PecaForm from './PecaForm'
+import MovimentacaoModal, { type TipoMovimentacao } from './MovimentacaoModal'
 import type { CatalogoModeloDTO } from '../../types/catalogo'
-import type { CriticidadeEstoque, PecaDTO } from '../../types/peca'
+import type { PecaDTO } from '../../types/peca'
 import type { PageResponse } from '../../types/pagination'
 
+type Aba = 'lista' | 'compatibilidade' | 'critico'
+
 export default function PecasLista() {
+  const [aba, setAba] = useState<Aba>('lista')
   const [pagina, setPagina] = useState<PageResponse<PecaDTO> | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [page, setPage] = useState(0)
-
-  const [criticidade, setCriticidade] = useState<CriticidadeEstoque | ''>('')
 
   const [buscaModelo, setBuscaModelo] = useState('')
   const [modeloFiltro, setModeloFiltro] = useState<CatalogoModeloDTO | null>(null)
   const [sugestoesModelo, setSugestoesModelo] = useState<CatalogoModeloDTO[]>([])
 
   const [modalNovo, setModalNovo] = useState(false)
+  const [modalEditar, setModalEditar] = useState<PecaDTO | null>(null)
+  const [modalMovimentacao, setModalMovimentacao] = useState<{ peca: PecaDTO; tipo: TipoMovimentacao } | null>(null)
+
+  const mudarAba = (novaAba: Aba) => {
+    setAba(novaAba)
+    setPage(0)
+    setModeloFiltro(null)
+    setBuscaModelo('')
+    setSugestoesModelo([])
+  }
 
   const carregar = () => {
+    if (aba === 'compatibilidade' && !modeloFiltro) {
+      setPagina(null)
+      setCarregando(false)
+      return
+    }
     setCarregando(true)
     setErro(null)
     pecasApi
       .listar({
         page,
-        criticidade: criticidade || undefined,
-        modeloCompativelId: modeloFiltro?.id,
+        criticidade: aba === 'critico' ? 'CRITICO' : undefined,
+        modeloCompativelId: aba === 'compatibilidade' ? modeloFiltro?.id : undefined,
       })
       .then(setPagina)
       .catch(() => setErro('Não foi possível carregar as peças.'))
       .finally(() => setCarregando(false))
   }
 
-  useEffect(carregar, [page, criticidade, modeloFiltro])
+  useEffect(carregar, [page, aba, modeloFiltro])
 
   useEffect(() => {
-    if (buscaModelo.trim().length < 2) {
+    if (aba !== 'compatibilidade' || buscaModelo.trim().length < 2) {
       setSugestoesModelo([])
       return
     }
@@ -48,7 +65,7 @@ export default function PecasLista() {
         .catch(() => setSugestoesModelo([]))
     }, 300)
     return () => clearTimeout(t)
-  }, [buscaModelo])
+  }, [aba, buscaModelo])
 
   const criticidadeBadge = (peca: PecaDTO) => {
     if (peca.emFalta) return <span className="badge b-red">Em falta</span>
@@ -61,7 +78,7 @@ export default function PecasLista() {
       <div className="page-header">
         <div>
           <div className="page-title">Peças</div>
-          <div className="page-sub">// {pagina?.totalElements ?? 0} cadastradas</div>
+          <div className="page-sub">// {pagina?.totalElements ?? 0} {aba === 'lista' ? 'cadastradas' : 'nesta visão'}</div>
         </div>
         <div className="no-print" style={{ display: 'flex', gap: 8 }}>
           <button className="btn" onClick={() => window.print()}>Imprimir</button>
@@ -69,28 +86,21 @@ export default function PecasLista() {
         </div>
       </div>
 
-      <div className="no-print" style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-        <div className="form-field" style={{ width: 200 }}>
-          <label className="form-label">Criticidade</label>
-          <select
-            className="form-select"
-            value={criticidade}
-            onChange={e => { setCriticidade(e.target.value as CriticidadeEstoque | ''); setPage(0) }}
-          >
-            <option value="">Todas</option>
-            <option value="EM_FALTA">Em falta</option>
-            <option value="ESTOQUE_BAIXO">Estoque baixo</option>
-          </select>
-        </div>
+      <div className="tabs no-print">
+        <div className={`tab${aba === 'lista' ? ' active' : ''}`} onClick={() => mudarAba('lista')}>☰ Lista</div>
+        <div className={`tab${aba === 'compatibilidade' ? ' active' : ''}`} onClick={() => mudarAba('compatibilidade')}>▦ Por compatibilidade</div>
+        <div className={`tab${aba === 'critico' ? ' active' : ''}`} onClick={() => mudarAba('critico')}>⚠ Estoque crítico</div>
+      </div>
 
-        <div className="form-field" style={{ width: 320, position: 'relative' }}>
+      {aba === 'compatibilidade' && (
+        <div className="no-print" style={{ marginBottom: 16, maxWidth: 320, position: 'relative' }}>
           <label className="form-label">Compatível com equipamento</label>
           {modeloFiltro ? (
             <div className="form-input" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>{modeloFiltro.marca} {modeloFiltro.modelo}</span>
               <span
                 style={{ cursor: 'pointer', color: 'var(--text3)' }}
-                onClick={() => { setModeloFiltro(null); setBuscaModelo(''); setPage(0) }}
+                onClick={() => { setModeloFiltro(null); setBuscaModelo('') }}
               >✕</span>
             </div>
           ) : (
@@ -115,11 +125,15 @@ export default function PecasLista() {
             </div>
           )}
         </div>
-      </div>
+      )}
 
       {erro && <div className="error-banner">{erro}</div>}
 
       {carregando && <div className="loading">Carregando</div>}
+
+      {!carregando && !erro && aba === 'compatibilidade' && !modeloFiltro && (
+        <div className="empty">Busque um equipamento acima para ver as peças compatíveis.</div>
+      )}
 
       {!carregando && !erro && pagina && pagina.content.length === 0 && (
         <div className="empty">Nenhuma peça encontrada.</div>
@@ -136,6 +150,7 @@ export default function PecasLista() {
                 <th>Mínimo</th>
                 <th>Compatível com</th>
                 <th>Situação</th>
+                <th className="no-print"></th>
               </tr>
             </thead>
             <tbody>
@@ -151,6 +166,14 @@ export default function PecasLista() {
                       : peca.modelosCompativeis.map(m => `${m.marca} ${m.modelo}`).join(', ')}
                   </td>
                   <td>{criticidadeBadge(peca)}</td>
+                  <td className="no-print">
+                    <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                      <button className="btn btn-sm btn-green" title="Entrada" onClick={() => setModalMovimentacao({ peca, tipo: 'entrada' })}>+</button>
+                      <button className="btn btn-sm btn-danger" title="Saída" onClick={() => setModalMovimentacao({ peca, tipo: 'saida' })}>−</button>
+                      <button className="btn btn-sm" title="Ajustar saldo" onClick={() => setModalMovimentacao({ peca, tipo: 'ajuste' })}>Ajustar</button>
+                      <button className="btn btn-sm btn-ghost" onClick={() => setModalEditar(peca)}>Editar</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -178,6 +201,23 @@ export default function PecasLista() {
         <PecaForm
           onClose={() => setModalNovo(false)}
           onSalvo={() => { setModalNovo(false); carregar() }}
+        />
+      )}
+
+      {modalEditar && (
+        <PecaForm
+          peca={modalEditar}
+          onClose={() => setModalEditar(null)}
+          onSalvo={() => { setModalEditar(null); carregar() }}
+        />
+      )}
+
+      {modalMovimentacao && (
+        <MovimentacaoModal
+          peca={modalMovimentacao.peca}
+          tipo={modalMovimentacao.tipo}
+          onClose={() => setModalMovimentacao(null)}
+          onSalvo={() => { setModalMovimentacao(null); carregar() }}
         />
       )}
     </div>
