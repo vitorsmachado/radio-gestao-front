@@ -33,6 +33,7 @@ export interface PostoDTO {
 
 export interface ClienteDTO {
   id: string
+  numeroIdentificacao: number
   tipo: TipoPessoa
   documento: string
   nomeRazaoSocial: string
