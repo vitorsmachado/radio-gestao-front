@@ -89,6 +89,7 @@ export default function ItemEntradaCard({ item, onAtualizado }: Props) {
             {[item.marca, item.modelo].filter(Boolean).join(' / ') || '—'}
             {item.numeroSerie ? ` · S/N ${item.numeroSerie}` : ''}
             {item.patrimonio ? ` · Pat. ${item.patrimonio}` : ''}
+            {item.codigoCliente ? ` · Cód. cliente ${item.codigoCliente}` : ''}
           </div>
         </div>
         <span className={`badge ${STATUS_BADGE[item.status]}`}>{STATUS_LABEL[item.status]}</span>

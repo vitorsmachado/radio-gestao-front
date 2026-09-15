@@ -27,7 +27,20 @@ export interface OrdemServicoDTO {
   status: StatusOS
   dataAbertura: string
   dataConclusao?: string
+  dataAtualizacao?: string
   observacoes?: string
+}
+
+export interface OrdemServicoResumoDTO {
+  id: string
+  numero: string
+  clienteId: string
+  clienteNome?: string
+  clienteDocumento?: string
+  solicitante?: string
+  status: StatusOS
+  dataAbertura: string
+  dataAtualizacao?: string
 }
 
 export interface OrdemServicoCreateRequest {
@@ -64,6 +77,7 @@ export interface ItemEntradaDTO {
   descricao: string
   numeroSerie?: string
   patrimonio?: string
+  codigoCliente?: string
   marca?: string
   modelo?: string
   defeitoRelatado?: string
@@ -83,6 +97,7 @@ export interface ItemEntradaCreateRequest {
   descricao: string
   numeroSerie?: string
   patrimonio?: string
+  codigoCliente?: string
   marca?: string
   modelo?: string
   defeitoRelatado?: string

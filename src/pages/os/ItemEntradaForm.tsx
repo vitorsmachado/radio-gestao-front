@@ -9,6 +9,7 @@ interface FormValues {
   modelo: string
   numeroSerie: string
   patrimonio: string
+  codigoCliente: string
   defeitoRelatado: string
 }
 
@@ -33,6 +34,7 @@ export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }
       modelo: d.modelo.trim() || undefined,
       numeroSerie: d.numeroSerie.trim() || undefined,
       patrimonio: d.patrimonio.trim() || undefined,
+      codigoCliente: d.codigoCliente.trim() || undefined,
       defeitoRelatado: d.defeitoRelatado.trim() || undefined,
     })
   )
@@ -78,6 +80,11 @@ export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }
             <label className="form-label">Patrimônio</label>
             <input className="form-input" {...register('patrimonio')} />
           </div>
+        </div>
+
+        <div className="form-field" style={{ marginBottom: 12 }}>
+          <label className="form-label">Código do cliente</label>
+          <input className="form-input" placeholder="Identificação própria do cliente pro item" {...register('codigoCliente')} />
         </div>
 
         <div className="form-field" style={{ marginBottom: 12 }}>
