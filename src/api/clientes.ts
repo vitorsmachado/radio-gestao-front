@@ -14,4 +14,13 @@ export const clientesApi = {
 
   criar: (data: ClienteCreateRequest) =>
     api.post<ClienteDTO>('/v1/clientes', data).then(r => r.data),
+
+  ativar: (id: string, motivo?: string) =>
+    api.patch<ClienteDTO>(`/v1/clientes/${id}/ativar`, motivo ? { motivo } : undefined).then(r => r.data),
+
+  bloquear: (id: string, motivo?: string) =>
+    api.patch<ClienteDTO>(`/v1/clientes/${id}/bloquear`, motivo ? { motivo } : undefined).then(r => r.data),
+
+  inativar: (id: string, motivo?: string) =>
+    api.patch<ClienteDTO>(`/v1/clientes/${id}/inativar`, motivo ? { motivo } : undefined).then(r => r.data),
 }

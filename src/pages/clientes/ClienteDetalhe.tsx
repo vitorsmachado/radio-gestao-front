@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { clientesApi } from '../../api/clientes'
 import { osApi } from '../../api/os'
+import AlterarStatusModal, { type AcaoStatus } from './AlterarStatusModal'
 import type { ClienteDTO } from '../../types/cliente'
 import type { OrdemServicoDTO, StatusOS } from '../../types/os'
 
@@ -37,8 +38,9 @@ export default function ClienteDetalhe() {
   const [ordens, setOrdens] = useState<OrdemServicoDTO[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
+  const [modalStatus, setModalStatus] = useState<AcaoStatus | null>(null)
 
-  useEffect(() => {
+  const carregar = () => {
     if (!id) return
     setCarregando(true)
     Promise.all([clientesApi.buscarPorId(id), osApi.listarPorCliente(id)])
@@ -48,7 +50,9 @@ export default function ClienteDetalhe() {
       })
       .catch(() => setErro('Cliente não encontrado.'))
       .finally(() => setCarregando(false))
-  }, [id])
+  }
+
+  useEffect(carregar, [id])
 
   if (carregando) return <div className="loading">Carregando</div>
   if (erro || !cliente) return <div className="error-banner">{erro ?? 'Cliente não encontrado.'}</div>
@@ -66,7 +70,18 @@ export default function ClienteDetalhe() {
           <div className="page-title">{cliente.nomeRazaoSocial}</div>
           <div className="page-sub">// {TIPO_LABEL[cliente.tipo] ?? cliente.tipo}</div>
         </div>
-        <span className={`badge ${STATUS_BADGE[cliente.status] ?? 'b-gray'}`}>{cliente.status}</span>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span className={`badge ${STATUS_BADGE[cliente.status] ?? 'b-gray'}`}>{cliente.status}</span>
+          {cliente.status !== 'ATIVO' && (
+            <button className="btn btn-sm btn-green" onClick={() => setModalStatus('ativar')}>Ativar</button>
+          )}
+          {cliente.status !== 'BLOQUEADO' && (
+            <button className="btn btn-sm btn-danger" onClick={() => setModalStatus('bloquear')}>Bloquear</button>
+          )}
+          {cliente.status === 'ATIVO' && (
+            <button className="btn btn-sm btn-ghost" onClick={() => setModalStatus('inativar')}>Inativar</button>
+          )}
+        </div>
       </div>
 
       <div className="section-card">
@@ -131,6 +146,15 @@ export default function ClienteDetalhe() {
             ))}
           </tbody>
         </table>
+      )}
+
+      {modalStatus && id && (
+        <AlterarStatusModal
+          clienteId={id}
+          acao={modalStatus}
+          onClose={() => setModalStatus(null)}
+          onSalvo={() => { setModalStatus(null); carregar() }}
+        />
       )}
     </div>
   )
