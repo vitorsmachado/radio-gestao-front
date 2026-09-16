@@ -55,3 +55,11 @@ export interface ClienteCreateRequest {
   inscricaoEstadual?: string
   endereco?: EnderecoDTO
 }
+
+export interface ClienteUpdateRequest {
+  numeroIdentificacao?: number
+  nomeRazaoSocial?: string
+  nomeFantasia?: string
+  inscricaoEstadual?: string
+  endereco?: EnderecoDTO
+}
