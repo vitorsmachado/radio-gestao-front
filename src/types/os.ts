@@ -108,3 +108,11 @@ export interface AvaliarItemRequest {
   avaliacaoTecnica?: string
   semDefeito: boolean
 }
+
+export interface HistoricoOSItemDTO {
+  osId: string
+  osNumero?: string
+  osStatus?: StatusOS
+  itemStatus: StatusItemEntrada
+  dataAbertura?: string
+}

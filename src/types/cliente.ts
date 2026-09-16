@@ -63,3 +63,14 @@ export interface ClienteUpdateRequest {
   inscricaoEstadual?: string
   endereco?: EnderecoDTO
 }
+
+export interface ItemGarantiaDTO {
+  id: string
+  tipoItem: 'EQUIPAMENTO' | 'ACESSORIO' | 'PECA' | 'SERVICO'
+  codigo: string
+  descricao: string
+  numeroSerie?: string
+  patrimonio?: string
+  garantiaFim?: string
+  emGarantia: boolean
+}

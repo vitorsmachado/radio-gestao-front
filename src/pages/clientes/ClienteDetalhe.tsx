@@ -3,10 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { clientesApi } from '../../api/clientes'
 import { osApi } from '../../api/os'
 import AlterarStatusModal, { type AcaoStatus } from './AlterarStatusModal'
-import type { ClienteDTO } from '../../types/cliente'
-import type { OrdemServicoDTO, StatusOS } from '../../types/os'
+import type { ClienteDTO, ItemGarantiaDTO } from '../../types/cliente'
+import type { HistoricoOSItemDTO, OrdemServicoDTO, StatusItemEntrada, StatusOS } from '../../types/os'
 
-type Aba = 'dados' | 'contatos' | 'os'
+type Aba = 'dados' | 'contatos' | 'os' | 'garantia'
+type ItemComHistorico = ItemGarantiaDTO & { historico: HistoricoOSItemDTO[] }
 
 const TIPO_LABEL: Record<string, string> = {
   PESSOA_FISICA: 'Pessoa Física',
@@ -33,12 +34,34 @@ const STATUS_OS_BADGE: Record<StatusOS, string> = {
   CANCELADA: 'b-red',
 }
 
+const STATUS_ITEM_LABEL: Record<StatusItemEntrada, string> = {
+  PENDENTE_AVALIACAO: 'Pendente de avaliação',
+  AVALIADO: 'Avaliado',
+  PENDENTE_AUTORIZACAO: 'Pendente de autorização',
+  AUTORIZADO: 'Autorizado',
+  NAO_AUTORIZADO: 'Não autorizado',
+  PENDENTE_MANUTENCAO: 'Pendente de manutenção',
+  AGUARDANDO_PECA: 'Aguardando peça',
+  EM_MANUTENCAO: 'Em manutenção',
+  MANUTENCAO_CONCLUIDA: 'Manutenção concluída',
+  AGUARDANDO_ENTREGA: 'Aguardando entrega',
+  ENTREGUE: 'Entregue',
+}
+
+const TIPO_ITEM_LABEL: Record<string, string> = {
+  EQUIPAMENTO: 'Equipamento',
+  ACESSORIO: 'Acessório',
+  PECA: 'Peça',
+  SERVICO: 'Serviço',
+}
+
 export default function ClienteDetalhe() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [aba, setAba] = useState<Aba>('dados')
   const [cliente, setCliente] = useState<ClienteDTO | null>(null)
   const [ordens, setOrdens] = useState<OrdemServicoDTO[]>([])
+  const [itensGarantia, setItensGarantia] = useState<ItemComHistorico[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [modalStatus, setModalStatus] = useState<AcaoStatus | null>(null)
@@ -50,10 +73,15 @@ export default function ClienteDetalhe() {
   const carregar = () => {
     if (!id) return
     setCarregando(true)
-    Promise.all([clientesApi.buscarCompleto(id), osApi.listarPorCliente(id)])
-      .then(([clienteData, ordensData]) => {
+    Promise.all([clientesApi.buscarCompleto(id), osApi.listarPorCliente(id), clientesApi.listarItensGarantia(id)])
+      .then(async ([clienteData, ordensData, itens]) => {
         setCliente(clienteData)
         setOrdens(ordensData)
+        const comHistorico = await Promise.all(itens.map(async item => ({
+          ...item,
+          historico: await osApi.listarHistoricoPorItemEstoque(item.id).catch(() => []),
+        })))
+        setItensGarantia(comHistorico)
       })
       .catch(() => setErro('Cliente não encontrado.'))
       .finally(() => setCarregando(false))
@@ -145,6 +173,9 @@ export default function ClienteDetalhe() {
         </div>
         <div className={`tab${aba === 'os' ? ' active' : ''}`} onClick={() => setAba('os')}>
           Ordens de Serviço<span className="tab-count">{ordens.length}</span>
+        </div>
+        <div className={`tab${aba === 'garantia' ? ' active' : ''}`} onClick={() => setAba('garantia')}>
+          Garantia<span className="tab-count">{itensGarantia.length}</span>
         </div>
       </div>
 
@@ -244,6 +275,64 @@ export default function ClienteDetalhe() {
               </tbody>
             </table>
           )}
+        </>
+      )}
+
+      {aba === 'garantia' && (
+        <>
+          {itensGarantia.length === 0 && (
+            <div className="empty">Nenhum equipamento ou acessório de propriedade do cliente cadastrado.</div>
+          )}
+          {itensGarantia.map(item => (
+            <div key={item.id} className="section-card" style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                <div>
+                  <div style={{ fontWeight: 600 }}>{item.descricao}</div>
+                  <div className="page-sub">
+                    {TIPO_ITEM_LABEL[item.tipoItem] ?? item.tipoItem} · {item.codigo}
+                    {item.numeroSerie ? ` · S/N ${item.numeroSerie}` : ''}
+                    {item.patrimonio ? ` · Pat. ${item.patrimonio}` : ''}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span className={`badge ${item.emGarantia ? 'b-green' : 'b-gray'}`}>
+                    {item.emGarantia ? 'Em garantia' : 'Fora de garantia'}
+                  </span>
+                  {item.garantiaFim && (
+                    <div className="page-sub" style={{ marginTop: 4 }}>
+                      até {new Date(item.garantiaFim).toLocaleDateString('pt-BR')}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {item.historico.length === 0 && (
+                <div className="page-sub">Nunca passou por uma Ordem de Serviço.</div>
+              )}
+              {item.historico.length > 0 && (
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>OS</th>
+                      <th>Status da OS</th>
+                      <th>Status do item</th>
+                      <th>Data de abertura</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {item.historico.map(h => (
+                      <tr key={h.osId} style={{ cursor: 'pointer' }} onClick={() => navigate(`/os/${h.osId}`)}>
+                        <td>{h.osNumero ?? '—'}</td>
+                        <td>{h.osStatus ? <span className={`badge ${STATUS_OS_BADGE[h.osStatus]}`}>{STATUS_OS_LABEL[h.osStatus]}</span> : '—'}</td>
+                        <td>{STATUS_ITEM_LABEL[h.itemStatus] ?? h.itemStatus}</td>
+                        <td>{h.dataAbertura ? new Date(h.dataAbertura).toLocaleDateString('pt-BR') : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          ))}
         </>
       )}
 
