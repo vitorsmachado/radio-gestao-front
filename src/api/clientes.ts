@@ -1,13 +1,9 @@
 import api from './axios'
-import type { ClienteCreateRequest, ClienteDTO, PageResponse } from '../types/cliente'
+import type { ClienteCreateRequest, ClienteDTO, PageResponse, StatusCliente } from '../types/cliente'
 
 export const clientesApi = {
-  listar: (page: number, nome?: string) =>
-    api
-      .get<PageResponse<ClienteDTO>>(nome ? '/v1/clientes/buscar' : '/v1/clientes', {
-        params: nome ? { nome, page } : { page },
-      })
-      .then(r => r.data),
+  listar: (params: { page?: number; busca?: string; status?: StatusCliente } = {}) =>
+    api.get<PageResponse<ClienteDTO>>('/v1/clientes', { params }).then(r => r.data),
 
   buscarPorId: (id: string) =>
     api.get<ClienteDTO>(`/v1/clientes/${id}`).then(r => r.data),
