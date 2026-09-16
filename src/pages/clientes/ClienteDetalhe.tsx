@@ -154,6 +154,7 @@ export default function ClienteDetalhe() {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span className={`badge ${STATUS_BADGE[cliente.status] ?? 'b-gray'}`}>{cliente.status}</span>
+          <button className="btn btn-sm" onClick={() => navigate(`/clientes/${cliente.id}/editar`)}>Editar</button>
           {cliente.status !== 'ATIVO' && (
             <button className="btn btn-sm btn-green" onClick={() => setModalStatus('ativar')}>Ativar</button>
           )}

@@ -43,6 +43,7 @@ const router = createBrowserRouter([
               { path: '/os/:id', element: <OsDetalhe /> },
               { path: '/clientes', element: <ClientesLista /> },
               { path: '/clientes/novo', element: <ClienteForm /> },
+              { path: '/clientes/:id/editar', element: <ClienteForm /> },
               { path: '/clientes/:id', element: <ClienteDetalhe /> },
               { path: '/estoque/pecas', element: <PecasLista /> },
               { path: '/estoque/catalogo', element: <CatalogoLista /> },

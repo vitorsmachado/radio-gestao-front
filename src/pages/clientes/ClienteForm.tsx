@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { clientesApi } from '../../api/clientes'
-import type { ClienteCreateRequest } from '../../types/cliente'
+import type { ClienteCreateRequest, ClienteUpdateRequest } from '../../types/cliente'
 
 interface FormValues {
   documento: string
@@ -23,62 +23,137 @@ function apenasDigitos(valor: string): string {
 }
 
 export default function ClienteForm() {
+  const { id } = useParams<{ id: string }>()
+  const editando = !!id
   const navigate = useNavigate()
+  const [carregando, setCarregando] = useState(editando)
   const [erroServidor, setErroServidor] = useState<string | null>(null)
+  const [erroCnpj, setErroCnpj] = useState<string | null>(null)
+  const [consultandoCnpj, setConsultandoCnpj] = useState(false)
 
   const {
     register,
     handleSubmit,
+    setValue,
+    reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>()
 
-  const onSubmit = async (dados: FormValues) => {
-    setErroServidor(null)
-    const documento = apenasDigitos(dados.documento)
+  useEffect(() => {
+    if (!editando || !id) return
+    clientesApi
+      .buscarPorId(id)
+      .then(cliente => {
+        reset({
+          documento: cliente.documento,
+          nomeRazaoSocial: cliente.nomeRazaoSocial,
+          nomeFantasia: cliente.nomeFantasia ?? '',
+          inscricaoEstadual: cliente.inscricaoEstadual ?? '',
+          cep: cliente.endereco?.cep ?? '',
+          logradouro: cliente.endereco?.logradouro ?? '',
+          numero: cliente.endereco?.numero ?? '',
+          complemento: cliente.endereco?.complemento ?? '',
+          bairro: cliente.endereco?.bairro ?? '',
+          cidade: cliente.endereco?.cidade ?? '',
+          estado: cliente.endereco?.estado ?? '',
+        })
+      })
+      .catch(() => setErroServidor('Cliente não encontrado.'))
+      .finally(() => setCarregando(false))
+  }, [editando, id, reset])
 
-    const temEndereco = dados.cep.trim() !== '' && dados.logradouro.trim() !== ''
+  const documentoAtual = watch('documento') || ''
+  const ehCnpj = apenasDigitos(documentoAtual).length === 14
 
-    const payload: ClienteCreateRequest = {
-      documento,
-      nomeRazaoSocial: dados.nomeRazaoSocial.trim(),
-      nomeFantasia: dados.nomeFantasia.trim() || undefined,
-      inscricaoEstadual: dados.inscricaoEstadual.trim() || undefined,
-      endereco: temEndereco
-        ? {
-            cep: apenasDigitos(dados.cep),
-            logradouro: dados.logradouro.trim(),
-            numero: dados.numero.trim() || undefined,
-            complemento: dados.complemento.trim() || undefined,
-            bairro: dados.bairro.trim() || undefined,
-            cidade: dados.cidade.trim() || undefined,
-            estado: dados.estado.trim() || undefined,
-          }
-        : undefined,
-    }
-
+  const consultarReceita = async () => {
+    const cnpj = apenasDigitos(documentoAtual)
+    if (cnpj.length !== 14) return
+    setErroCnpj(null)
+    setConsultandoCnpj(true)
     try {
-      const cliente = await clientesApi.criar(payload)
-      navigate(`/clientes/${cliente.id}`, { replace: true })
+      const dados = await clientesApi.consultarCNPJ(cnpj)
+      if (dados.nomeRazaoSocial) setValue('nomeRazaoSocial', dados.nomeRazaoSocial)
+      if (dados.nomeFantasia) setValue('nomeFantasia', dados.nomeFantasia)
+      if (dados.endereco) {
+        setValue('cep', dados.endereco.cep ?? '')
+        setValue('logradouro', dados.endereco.logradouro ?? '')
+        setValue('numero', dados.endereco.numero ?? '')
+        setValue('complemento', dados.endereco.complemento ?? '')
+        setValue('bairro', dados.endereco.bairro ?? '')
+        setValue('cidade', dados.endereco.cidade ?? '')
+        setValue('estado', dados.endereco.estado ?? '')
+      }
     } catch (e: unknown) {
       const msg =
         (e as { response?: { data?: { message?: string } } })
-          ?.response?.data?.message ?? 'Não foi possível criar o cliente.'
+          ?.response?.data?.message ?? 'Não foi possível consultar a Receita — preencha manualmente.'
+      setErroCnpj(msg)
+    } finally {
+      setConsultandoCnpj(false)
+    }
+  }
+
+  const onSubmit = async (dados: FormValues) => {
+    setErroServidor(null)
+    const temEndereco = dados.cep.trim() !== '' && dados.logradouro.trim() !== ''
+    const endereco = temEndereco
+      ? {
+          cep: apenasDigitos(dados.cep),
+          logradouro: dados.logradouro.trim(),
+          numero: dados.numero.trim() || undefined,
+          complemento: dados.complemento.trim() || undefined,
+          bairro: dados.bairro.trim() || undefined,
+          cidade: dados.cidade.trim() || undefined,
+          estado: dados.estado.trim() || undefined,
+        }
+      : undefined
+
+    try {
+      if (editando && id) {
+        const payload: ClienteUpdateRequest = {
+          nomeRazaoSocial: dados.nomeRazaoSocial.trim(),
+          nomeFantasia: dados.nomeFantasia.trim() || undefined,
+          inscricaoEstadual: dados.inscricaoEstadual.trim() || undefined,
+          endereco,
+        }
+        await clientesApi.atualizar(id, payload)
+        navigate(`/clientes/${id}`)
+      } else {
+        const payload: ClienteCreateRequest = {
+          documento: apenasDigitos(dados.documento),
+          nomeRazaoSocial: dados.nomeRazaoSocial.trim(),
+          nomeFantasia: dados.nomeFantasia.trim() || undefined,
+          inscricaoEstadual: dados.inscricaoEstadual.trim() || undefined,
+          endereco,
+        }
+        const cliente = await clientesApi.criar(payload)
+        navigate(`/clientes/${cliente.id}`, { replace: true })
+      }
+    } catch (e: unknown) {
+      const msg =
+        (e as { response?: { data?: { message?: string } } })
+          ?.response?.data?.message ?? `Não foi possível ${editando ? 'atualizar' : 'criar'} o cliente.`
       setErroServidor(msg)
     }
   }
+
+  if (carregando) return <div className="loading">Carregando</div>
 
   return (
     <div className="fade-in">
       <div className="breadcrumb">
         <span className="crumb" onClick={() => navigate('/clientes')}>Clientes</span>
         <span className="sep">/</span>
-        <span className="current">Novo</span>
+        <span className="current">{editando ? 'Editar' : 'Novo'}</span>
       </div>
 
       <div className="page-header">
         <div>
-          <div className="page-title">Novo cliente</div>
-          <div className="page-sub">// tipo é inferido pelo tamanho do documento (11 = CPF, 14 = CNPJ)</div>
+          <div className="page-title">{editando ? 'Editar cliente' : 'Novo cliente'}</div>
+          {!editando && (
+            <div className="page-sub">// tipo é inferido pelo tamanho do documento (11 = CPF, 14 = CNPJ)</div>
+          )}
         </div>
       </div>
 
@@ -89,18 +164,30 @@ export default function ClienteForm() {
           <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
             <div className="form-field">
               <label className="form-label">Documento (CPF ou CNPJ)</label>
-              <input
-                className={`form-input${errors.documento ? ' error' : ''}`}
-                placeholder="Somente números"
-                {...register('documento', {
-                  required: 'Documento obrigatório',
-                  validate: v => {
-                    const d = apenasDigitos(v)
-                    return d.length === 11 || d.length === 14 || 'Deve ter 11 (CPF) ou 14 (CNPJ) dígitos'
-                  },
-                })}
-              />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  className={`form-input${errors.documento ? ' error' : ''}`}
+                  placeholder="Somente números"
+                  disabled={editando}
+                  {...register('documento', {
+                    required: 'Documento obrigatório',
+                    validate: v => {
+                      const d = apenasDigitos(v)
+                      return d.length === 11 || d.length === 14 || 'Deve ter 11 (CPF) ou 14 (CNPJ) dígitos'
+                    },
+                  })}
+                />
+                {ehCnpj && (
+                  <button
+                    type="button" className="btn btn-sm" style={{ whiteSpace: 'nowrap' }}
+                    disabled={consultandoCnpj} onClick={consultarReceita}
+                  >
+                    {consultandoCnpj ? '// consultando...' : 'Consultar Receita'}
+                  </button>
+                )}
+              </div>
               {errors.documento && <span className="form-error">{errors.documento.message}</span>}
+              {erroCnpj && <span className="form-error">{erroCnpj}</span>}
             </div>
             <div className="form-field">
               <label className="form-label">Inscrição estadual</label>
@@ -166,7 +253,10 @@ export default function ClienteForm() {
 
         <div className="footer-actions">
           <div className="footer-left">
-            <button type="button" className="btn btn-ghost" onClick={() => navigate('/clientes')}>
+            <button
+              type="button" className="btn btn-ghost"
+              onClick={() => navigate(editando ? `/clientes/${id}` : '/clientes')}
+            >
               Cancelar
             </button>
           </div>

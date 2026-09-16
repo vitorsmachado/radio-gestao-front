@@ -1,5 +1,5 @@
 import api from './axios'
-import type { ClienteCreateRequest, ClienteDTO, ClienteUpdateRequest, ItemGarantiaDTO, PageResponse, StatusCliente } from '../types/cliente'
+import type { ClienteCreateRequest, ClienteDTO, ClienteUpdateRequest, ConsultaCnpjDTO, ItemGarantiaDTO, PageResponse, StatusCliente } from '../types/cliente'
 
 export const clientesApi = {
   listar: (params: { page?: number; busca?: string; status?: StatusCliente } = {}) =>
@@ -7,6 +7,9 @@ export const clientesApi = {
 
   buscarPorId: (id: string) =>
     api.get<ClienteDTO>(`/v1/clientes/${id}`).then(r => r.data),
+
+  consultarCNPJ: (cnpj: string) =>
+    api.get<ConsultaCnpjDTO>(`/v1/clientes/consulta-cnpj/${cnpj}`).then(r => r.data),
 
   buscarCompleto: (id: string) =>
     api.get<ClienteDTO>(`/v1/clientes/${id}/completo`).then(r => r.data),

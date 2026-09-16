@@ -64,6 +64,12 @@ export interface ClienteUpdateRequest {
   endereco?: EnderecoDTO
 }
 
+export interface ConsultaCnpjDTO {
+  nomeRazaoSocial?: string
+  nomeFantasia?: string
+  endereco?: EnderecoDTO
+}
+
 export interface ItemGarantiaDTO {
   id: string
   tipoItem: 'EQUIPAMENTO' | 'ACESSORIO' | 'PECA' | 'SERVICO'
