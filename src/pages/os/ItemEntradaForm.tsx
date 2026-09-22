@@ -11,6 +11,8 @@ interface FormValues {
   patrimonio: string
   codigoCliente: string
   defeitoRelatado: string
+  rastreamento: 'NS' | 'QUANTIDADE'
+  quantidade: number
 }
 
 interface Props {
@@ -21,9 +23,13 @@ interface Props {
 }
 
 export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }: Props) {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
-    defaultValues: { tipoItem: 'EQUIPAMENTO' },
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
+    defaultValues: { tipoItem: 'EQUIPAMENTO', rastreamento: 'NS', quantidade: 1 },
   })
+
+  const tipoItem = watch('tipoItem')
+  const rastreamento = watch('rastreamento')
+  const porQuantidade = tipoItem === 'ACESSORIO' && rastreamento === 'QUANTIDADE'
 
   const onSubmit = handleSubmit(d =>
     onSalvar({
@@ -32,9 +38,10 @@ export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }
       descricao: d.descricao.trim(),
       marca: d.marca.trim() || undefined,
       modelo: d.modelo.trim() || undefined,
-      numeroSerie: d.numeroSerie.trim() || undefined,
-      patrimonio: d.patrimonio.trim() || undefined,
+      numeroSerie: porQuantidade ? undefined : (d.numeroSerie.trim() || undefined),
+      patrimonio: porQuantidade ? undefined : (d.patrimonio.trim() || undefined),
       codigoCliente: d.codigoCliente.trim() || undefined,
+      quantidade: porQuantidade ? (Number(d.quantidade) || 1) : 1,
       defeitoRelatado: d.defeitoRelatado.trim() || undefined,
     })
   )
@@ -71,16 +78,45 @@ export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }
           </div>
         </div>
 
-        <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
-          <div className="form-field">
-            <label className="form-label">Número de série</label>
-            <input className="form-input" {...register('numeroSerie')} />
+        {tipoItem === 'ACESSORIO' && (
+          <div className="form-field" style={{ marginBottom: 12 }}>
+            <label className="form-label">Rastreamento</label>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                <input type="radio" value="NS" {...register('rastreamento')} />
+                Rastreado (N/S ou patrimônio)
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                <input type="radio" value="QUANTIDADE" {...register('rastreamento')} />
+                Por quantidade
+              </label>
+            </div>
+            <div className="form-hint" style={{ marginTop: 4 }}>
+              Use "por quantidade" para acessórios sem identificação individual — ex: antenas genéricas.
+            </div>
           </div>
-          <div className="form-field">
-            <label className="form-label">Patrimônio</label>
-            <input className="form-input" {...register('patrimonio')} />
+        )}
+
+        {porQuantidade ? (
+          <div className="form-field" style={{ marginBottom: 12, maxWidth: 160 }}>
+            <label className="form-label">Quantidade</label>
+            <input
+              type="number" min={1} className="form-input"
+              {...register('quantidade', { valueAsNumber: true, min: 1 })}
+            />
           </div>
-        </div>
+        ) : (
+          <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
+            <div className="form-field">
+              <label className="form-label">Número de série</label>
+              <input className="form-input" {...register('numeroSerie')} />
+            </div>
+            <div className="form-field">
+              <label className="form-label">Patrimônio</label>
+              <input className="form-input" {...register('patrimonio')} />
+            </div>
+          </div>
+        )}
 
         <div className="form-field" style={{ marginBottom: 12 }}>
           <label className="form-label">Código do cliente</label>

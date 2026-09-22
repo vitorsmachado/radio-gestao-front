@@ -90,6 +90,7 @@ export default function ItemEntradaCard({ item, onAtualizado }: Props) {
             {item.numeroSerie ? ` · S/N ${item.numeroSerie}` : ''}
             {item.patrimonio ? ` · Pat. ${item.patrimonio}` : ''}
             {item.codigoCliente ? ` · Cód. cliente ${item.codigoCliente}` : ''}
+            {item.quantidade > 1 ? ` · Qtd. ${item.quantidade}` : ''}
           </div>
         </div>
         <span className={`badge ${STATUS_BADGE[item.status]}`}>{STATUS_LABEL[item.status]}</span>

@@ -64,6 +64,15 @@ export interface ClienteUpdateRequest {
   endereco?: EnderecoDTO
 }
 
+export interface ContatoCreateRequest {
+  nome: string
+  tipo: 'COMERCIAL' | 'TECNICO' | 'FINANCEIRO' | 'GERENCIAL'
+  telefone?: string
+  email?: string
+  cargo?: string
+  principal?: boolean
+}
+
 export interface ConsultaCnpjDTO {
   nomeRazaoSocial?: string
   nomeFantasia?: string

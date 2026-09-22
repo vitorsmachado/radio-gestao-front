@@ -16,6 +16,17 @@ export type StatusItemEntrada =
 export type TipoItem = 'EQUIPAMENTO' | 'ACESSORIO' | 'PECA' | 'SERVICO'
 export type TipoItemConserto = 'PECA' | 'MAO_DE_OBRA' | 'DESLOCAMENTO'
 
+/**
+ * Tipo de OS — hoje só existe uma opção. É um conceito só de front (o
+ * backend ainda não modela "tipo de OS"); serve pra já deixar pronto o
+ * padrão de seleção de tipo pra quando existirem outros.
+ */
+export type TipoOS = 'ORCAMENTO_MANUTENCAO'
+
+export const TIPO_OS_LABEL: Record<TipoOS, string> = {
+  ORCAMENTO_MANUTENCAO: 'Orçamento de manutenção',
+}
+
 export interface OrdemServicoDTO {
   id: string
   numero: string
@@ -48,6 +59,9 @@ export interface OrdemServicoCreateRequest {
   postoId?: string
   tecnicoId?: string
   solicitante?: string
+  /** Opcional — se ausente, o backend usa o momento da criação. */
+  dataAbertura?: string
+  observacoes?: string
 }
 
 export interface ItemConsertoDTO {
@@ -73,11 +87,15 @@ export interface ItemEntradaDTO {
   osId: string
   orcamentoId?: string
   itemEstoqueId?: string
+  catalogoModeloId?: string
+  /** Preço de referência do modelo do catálogo (novo), quando houver — resolvido pelo backend. */
+  catalogoValorReferencia?: number
   tipoItem: TipoItem
   descricao: string
   numeroSerie?: string
   patrimonio?: string
   codigoCliente?: string
+  quantidade: number
   marca?: string
   modelo?: string
   defeitoRelatado?: string
@@ -93,11 +111,14 @@ export interface ItemEntradaDTO {
 export interface ItemEntradaCreateRequest {
   osId: string
   itemEstoqueId?: string
+  catalogoModeloId?: string
   tipoItem: TipoItem
   descricao: string
   numeroSerie?: string
   patrimonio?: string
   codigoCliente?: string
+  /** Opcional — se ausente, assume 1. Maior que 1 só é permitido sem número de série/patrimônio. */
+  quantidade?: number
   marca?: string
   modelo?: string
   defeitoRelatado?: string

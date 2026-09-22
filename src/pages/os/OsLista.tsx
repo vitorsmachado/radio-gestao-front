@@ -80,6 +80,7 @@ export default function OsLista() {
           <div className="page-title">Ordens de Serviço</div>
           <div className="page-sub">// {pagina?.totalElements ?? 0} no total</div>
         </div>
+        <button className="btn btn-amber" onClick={() => navigate('/os/novo')}>+ Nova OS</button>
       </div>
 
       <form onSubmit={onBuscar} style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -114,12 +115,6 @@ export default function OsLista() {
         </div>
         <button className="btn btn-amber" type="submit">Buscar</button>
       </form>
-
-      <div className="form-hint" style={{ marginBottom: 16 }}>
-        Para abrir uma nova OS, acesse o cadastro do cliente e clique em <span
-          className="crumb" style={{ cursor: 'pointer' }} onClick={() => navigate('/clientes')}
-        >+ Nova OS</span>.
-      </div>
 
       {erro && <div className="error-banner">{erro}</div>}
 

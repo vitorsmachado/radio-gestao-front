@@ -1,5 +1,5 @@
 import api from './axios'
-import type { ClienteCreateRequest, ClienteDTO, ClienteUpdateRequest, ConsultaCnpjDTO, ItemGarantiaDTO, PageResponse, StatusCliente } from '../types/cliente'
+import type { ClienteCreateRequest, ClienteDTO, ClienteUpdateRequest, ConsultaCnpjDTO, ContatoCreateRequest, ItemGarantiaDTO, PageResponse, StatusCliente } from '../types/cliente'
 
 export const clientesApi = {
   listar: (params: { page?: number; busca?: string; status?: StatusCliente } = {}) =>
@@ -31,4 +31,8 @@ export const clientesApi = {
 
   inativar: (id: string, motivo?: string) =>
     api.patch<ClienteDTO>(`/v1/clientes/${id}/inativar`, motivo ? { motivo } : undefined).then(r => r.data),
+
+  /** Retorna o cliente completo (com a lista de contatos já atualizada), não só o contato criado. */
+  criarContato: (clienteId: string, data: ContatoCreateRequest) =>
+    api.post<ClienteDTO>(`/v1/clientes/${clienteId}/contatos`, data).then(r => r.data),
 }
