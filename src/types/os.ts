@@ -2,6 +2,7 @@ export type StatusOS = 'ABERTA' | 'EM_ANDAMENTO' | 'CONCLUIDA' | 'CANCELADA'
 
 export type StatusItemEntrada =
   | 'PENDENTE_AVALIACAO'
+  | 'EM_AVALIACAO'
   | 'AVALIADO'
   | 'PENDENTE_AUTORIZACAO'
   | 'AUTORIZADO'
@@ -15,6 +16,23 @@ export type StatusItemEntrada =
 
 export type TipoItem = 'EQUIPAMENTO' | 'ACESSORIO' | 'PECA' | 'SERVICO'
 export type TipoItemConserto = 'PECA' | 'MAO_DE_OBRA' | 'DESLOCAMENTO'
+
+export type ResultadoAvaliacao = 'AJUSTE' | 'ORCAMENTO' | 'SEM_DEFEITO' | 'SEM_CONSERTO'
+
+export const RESULTADO_AVALIACAO_LABEL: Record<ResultadoAvaliacao, string> = {
+  AJUSTE: 'Ajuste',
+  ORCAMENTO: 'Precisa de orçamento',
+  SEM_DEFEITO: 'Sem defeito',
+  SEM_CONSERTO: 'Sem conserto',
+}
+
+export type AcaoReordenarFila = 'SUBIR' | 'DESCER' | 'POSICAO'
+
+export interface ReordenarFilaRequest {
+  acao: AcaoReordenarFila
+  /** Índice (0-based) dentro do bloco atual da OS — obrigatório quando acao = 'POSICAO'. */
+  posicao?: number
+}
 
 /**
  * Tipo de OS — hoje só existe uma opção. É um conceito só de front (o
@@ -104,8 +122,39 @@ export interface ItemEntradaDTO {
   garantia: boolean
   status: StatusItemEntrada
   motivoNaoAutorizado?: string
+  resultadoAvaliacao?: ResultadoAvaliacao
+  detalheAjuste?: string
+  defeitoEncontrado?: string
+  causaDefeito?: string
+  solucaoRecomendada?: string
+  observacoesTecnicas?: string
+  confirmadoAguardandoPecaEm?: string
   itensConserto: ItemConsertoDTO[]
   valorTotalConserto: number
+}
+
+export interface SalvarAvaliacaoTecnicaRequest {
+  resultado: ResultadoAvaliacao
+  detalheAjuste?: string
+  defeitoEncontrado?: string
+  causaDefeito?: string
+  solucaoRecomendada?: string
+  observacoesTecnicas?: string
+  garantia?: boolean
+}
+
+/**
+ * bloco agrupa visualmente (1 = em avaliação, 2 = pronta pra manutenção,
+ * 3 = aguardando avaliação, 4 = aguardando peça confirmado) — setas/arrastar
+ * reordenam só dentro do mesmo bloco.
+ */
+export interface FilaManutencaoOSDTO {
+  osId: string
+  osNumero: string
+  clienteId: string
+  clienteNome?: string
+  bloco: number
+  itens: ItemEntradaDTO[]
 }
 
 export interface ItemEntradaCreateRequest {

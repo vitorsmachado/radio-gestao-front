@@ -36,6 +36,7 @@ const STATUS_OS_BADGE: Record<StatusOS, string> = {
 
 const STATUS_ITEM_LABEL: Record<StatusItemEntrada, string> = {
   PENDENTE_AVALIACAO: 'Pendente de avaliação',
+  EM_AVALIACAO: 'Em avaliação',
   AVALIADO: 'Avaliado',
   PENDENTE_AUTORIZACAO: 'Pendente de autorização',
   AUTORIZADO: 'Autorizado',

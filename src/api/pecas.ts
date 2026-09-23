@@ -3,7 +3,7 @@ import type { CriticidadeEstoque, MovimentacaoEstoqueDTO, PecaCreateRequest, Pec
 import type { PageResponse } from '../types/pagination'
 
 export const pecasApi = {
-  listar: (params: { page?: number; criticidade?: CriticidadeEstoque; modeloCompativelId?: string } = {}) =>
+  listar: (params: { page?: number; criticidade?: CriticidadeEstoque; modeloCompativelId?: string; busca?: string } = {}) =>
     api.get<PageResponse<PecaDTO>>('/v1/estoque/pecas', { params }).then(r => r.data),
 
   criar: (data: PecaCreateRequest) =>

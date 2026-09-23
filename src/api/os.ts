@@ -1,5 +1,14 @@
 import api from './axios'
-import type { HistoricoOSItemDTO, OrdemServicoCreateRequest, OrdemServicoDTO, OrdemServicoResumoDTO } from '../types/os'
+import type {
+  FilaManutencaoOSDTO,
+  HistoricoOSItemDTO,
+  ItemEntradaDTO,
+  OrdemServicoCreateRequest,
+  OrdemServicoDTO,
+  OrdemServicoResumoDTO,
+  ReordenarFilaRequest,
+  SalvarAvaliacaoTecnicaRequest,
+} from '../types/os'
 import type { PageResponse } from '../types/pagination'
 
 export const osApi = {
@@ -30,6 +39,23 @@ export const osApi = {
   cancelar: (id: string, motivo: string) =>
     api.patch<OrdemServicoDTO>(`/v1/ordens-servico/${id}/cancelar`, { motivo }).then(r => r.data),
 
+  listarFilaManutencao: () =>
+    api.get<FilaManutencaoOSDTO[]>('/v1/ordens-servico/fila-manutencao').then(r => r.data),
+
+  reordenarFila: (id: string, data: ReordenarFilaRequest) =>
+    api.patch<FilaManutencaoOSDTO[]>(`/v1/ordens-servico/${id}/reordenar-fila`, data).then(r => r.data),
+
   baixarPdf: (id: string) =>
     api.get(`/v1/ordens-servico/${id}/pdf`, { responseType: 'blob' }).then(r => r.data as Blob),
+}
+
+export const itensEntradaAvaliacaoApi = {
+  iniciarAvaliacao: (id: string) =>
+    api.patch<ItemEntradaDTO>(`/v1/itens-entrada/${id}/iniciar-avaliacao`).then(r => r.data),
+
+  salvarAvaliacaoTecnica: (id: string, data: SalvarAvaliacaoTecnicaRequest) =>
+    api.patch<ItemEntradaDTO>(`/v1/itens-entrada/${id}/avaliacao-tecnica`, data).then(r => r.data),
+
+  confirmarAguardandoPeca: (id: string) =>
+    api.patch<ItemEntradaDTO>(`/v1/itens-entrada/${id}/confirmar-aguardando-peca`).then(r => r.data),
 }

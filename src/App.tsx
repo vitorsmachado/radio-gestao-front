@@ -14,6 +14,10 @@ import OsLista from './pages/os/OsLista'
 import OsForm from './pages/os/OsForm'
 import OsDetalhe from './pages/os/OsDetalhe'
 
+// Manutenção (técnico)
+import FilaManutencao from './pages/manutencao/FilaManutencao'
+import AvaliacaoOS from './pages/manutencao/AvaliacaoOS'
+
 // Estoque
 import PecasLista from './pages/estoque/PecasLista'
 import CatalogoLista from './pages/estoque/CatalogoLista'
@@ -47,6 +51,13 @@ const router = createBrowserRouter([
               { path: '/clientes/:id', element: <ClienteDetalhe /> },
               { path: '/estoque/pecas', element: <PecasLista /> },
               { path: '/estoque/catalogo', element: <CatalogoLista /> },
+              {
+                element: <RotaProtegida roles={['TECNICO', 'ADMIN']} />,
+                children: [
+                  { path: '/manutencao', element: <FilaManutencao /> },
+                  { path: '/manutencao/:osId', element: <AvaliacaoOS /> },
+                ],
+              },
               { path: '/', element: <Navigate to="/clientes" replace /> },
             ],
           },

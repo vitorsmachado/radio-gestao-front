@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { itensEntradaApi } from '../../api/itensEntrada'
+import { itensEntradaAvaliacaoApi } from '../../api/os'
 import Modal from '../../components/Modal'
 import type {
   AvaliarItemRequest,
@@ -12,6 +13,7 @@ import type {
 
 const STATUS_LABEL: Record<StatusItemEntrada, string> = {
   PENDENTE_AVALIACAO: 'Pendente de avaliação',
+  EM_AVALIACAO: 'Em avaliação',
   AVALIADO: 'Avaliado',
   PENDENTE_AUTORIZACAO: 'Pendente de autorização',
   AUTORIZADO: 'Autorizado',
@@ -26,6 +28,7 @@ const STATUS_LABEL: Record<StatusItemEntrada, string> = {
 
 const STATUS_BADGE: Record<StatusItemEntrada, string> = {
   PENDENTE_AVALIACAO: 'b-gray',
+  EM_AVALIACAO: 'b-purple',
   AVALIADO: 'b-blue',
   PENDENTE_AUTORIZACAO: 'b-amber',
   AUTORIZADO: 'b-green',
@@ -199,9 +202,18 @@ export default function ItemEntradaCard({ item, onAtualizado }: Props) {
           </button>
         )}
         {item.status === 'AGUARDANDO_PECA' && (
-          <div className="form-hint" style={{ alignSelf: 'center' }}>
-            Volta para a fila automaticamente quando a peça chegar no estoque.
-          </div>
+          <>
+            {!item.confirmadoAguardandoPecaEm ? (
+              <button className="btn btn-sm" disabled={processando}
+                onClick={() => executar(() => itensEntradaAvaliacaoApi.confirmarAguardandoPeca(item.id))}>
+                Confirmar aguardando peça
+              </button>
+            ) : (
+              <div className="form-hint" style={{ alignSelf: 'center' }}>
+                Confirmado — no final da fila até a peça chegar.
+              </div>
+            )}
+          </>
         )}
         {item.status === 'AGUARDANDO_ENTREGA' && (
           <button className="btn btn-sm btn-green" disabled={processando}

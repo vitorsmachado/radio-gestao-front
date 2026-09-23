@@ -72,6 +72,16 @@ export default function AppLayout() {
           ),
         },
         {
+          label: 'Manutenções',
+          path: '/manutencao',
+          roles: ['ADMIN', 'TECNICO'],
+          icon: (
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M9.5 2.5a3 3 0 0 0-3.9 3.9L2 10v3h3l3.6-3.6a3 3 0 0 0 3.9-3.9L10.5 7.5 8.5 5.5z" />
+            </svg>
+          ),
+        },
+        {
           label: 'Estoque',
           path: '/estoque/pecas',
           roles: ['ADMIN', 'TECNICO', 'AUXILIAR'],
