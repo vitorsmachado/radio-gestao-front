@@ -18,6 +18,10 @@ import OsDetalhe from './pages/os/OsDetalhe'
 import FilaManutencao from './pages/manutencao/FilaManutencao'
 import AvaliacaoOS from './pages/manutencao/AvaliacaoOS'
 
+// Orçamentos
+import OrcamentosLista from './pages/orcamentos/OrcamentosLista'
+import OrcamentoDetalhe from './pages/orcamentos/OrcamentoDetalhe'
+
 // Estoque
 import PecasLista from './pages/estoque/PecasLista'
 import CatalogoLista from './pages/estoque/CatalogoLista'
@@ -51,6 +55,8 @@ const router = createBrowserRouter([
               { path: '/clientes/:id', element: <ClienteDetalhe /> },
               { path: '/estoque/pecas', element: <PecasLista /> },
               { path: '/estoque/catalogo', element: <CatalogoLista /> },
+              { path: '/orcamentos', element: <OrcamentosLista /> },
+              { path: '/orcamentos/:id', element: <OrcamentoDetalhe /> },
               {
                 element: <RotaProtegida roles={['TECNICO', 'ADMIN']} />,
                 children: [

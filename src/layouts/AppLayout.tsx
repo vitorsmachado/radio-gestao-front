@@ -122,6 +122,19 @@ export default function AppLayout() {
             </svg>
           ),
         },
+        {
+          label: 'Orçamentos',
+          path: '/orcamentos',
+          roles: ['ADMIN', 'AUXILIAR'],
+          icon: (
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M3 2h10v12H3z" />
+              <line x1="6" y1="6" x2="10" y2="6" />
+              <line x1="6" y1="9" x2="10" y2="9" />
+              <path d="M6 12h2" />
+            </svg>
+          ),
+        },
       ],
     },
   ]

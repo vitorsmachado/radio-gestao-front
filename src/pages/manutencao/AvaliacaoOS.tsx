@@ -3,19 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { clientesApi } from '../../api/clientes'
 import { itensEntradaApi } from '../../api/itensEntrada'
 import { itensEntradaAvaliacaoApi, osApi } from '../../api/os'
-import PecaCompativelSelector from '../../components/PecaCompativelSelector'
 import SugestaoTextArea from '../../components/SugestaoTextArea'
 import ItemEntradaCard from '../os/ItemEntradaCard'
 import type { ClienteDTO } from '../../types/cliente'
 import type { ItemEntradaDTO, OrdemServicoDTO, ResultadoAvaliacao } from '../../types/os'
 import { RESULTADO_AVALIACAO_LABEL } from '../../types/os'
-import type { PecaDTO } from '../../types/peca'
 
 const RESULTADOS: ResultadoAvaliacao[] = ['AJUSTE', 'ORCAMENTO', 'SEM_DEFEITO', 'SEM_CONSERTO']
-
-function formatarMoeda(v: number): string {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
 
 export default function AvaliacaoOS() {
   const { osId } = useParams<{ osId: string }>()
@@ -82,11 +76,7 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
   const [solucaoRecomendada, setSolucaoRecomendada] = useState(item.solucaoRecomendada ?? '')
   const [observacoesTecnicas, setObservacoesTecnicas] = useState(item.observacoesTecnicas ?? '')
   const [garantia, setGarantia] = useState(item.garantia)
-  const [pecaPendente, setPecaPendente] = useState<PecaDTO | null>(null)
-  const [qtdPendente, setQtdPendente] = useState('1')
-  const [valorPendente, setValorPendente] = useState('')
   const [salvando, setSalvando] = useState(false)
-  const [adicionandoPeca, setAdicionandoPeca] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   const toggleExpandir = async () => {
@@ -98,30 +88,6 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
       }
     }
     setExpandido(e => !e)
-  }
-
-  const adicionarPeca = async () => {
-    if (!pecaPendente) return
-    setAdicionandoPeca(true)
-    setErro(null)
-    try {
-      const atualizado = await itensEntradaApi.adicionarItemConserto(item.id, {
-        tipo: 'PECA',
-        itemEstoqueId: pecaPendente.id,
-        descricao: pecaPendente.descricao,
-        quantidade: Number(qtdPendente) || 1,
-        valorUnitario: Number(valorPendente) || 0,
-      })
-      onAtualizado(atualizado)
-      setPecaPendente(null)
-      setQtdPendente('1')
-      setValorPendente('')
-    } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
-      setErro(msg ?? 'Não foi possível adicionar a peça.')
-    } finally {
-      setAdicionandoPeca(false)
-    }
   }
 
   const salvar = async () => {
@@ -146,8 +112,6 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
       setSalvando(false)
     }
   }
-
-  const precisaPecas = resultado === 'ORCAMENTO' || resultado === 'SEM_CONSERTO'
 
   return (
     <div className="section-card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -192,58 +156,6 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
             <div className="form-field" style={{ marginBottom: 12 }}>
               <label className="form-label">Qual o ajuste</label>
               <input className="form-input" value={detalheAjuste} onChange={e => setDetalheAjuste(e.target.value)} />
-            </div>
-          )}
-
-          {precisaPecas && (
-            <div className="form-field" style={{ marginBottom: 12 }}>
-              <label className="form-label">Peças</label>
-              <PecaCompativelSelector catalogoModeloId={item.catalogoModeloId} onSelecionar={setPecaPendente} />
-
-              {pecaPendente && (
-                <div className="section-card" style={{ marginTop: 8, background: 'var(--bg3)' }}>
-                  <div style={{ fontSize: 13, marginBottom: 8 }}>{pecaPendente.descricao}</div>
-                  <div className="form-row form-row-2" style={{ marginBottom: 8 }}>
-                    <div className="form-field">
-                      <label className="form-label">Quantidade</label>
-                      <input type="number" min={1} className="form-input" value={qtdPendente} onChange={e => setQtdPendente(e.target.value)} />
-                    </div>
-                    <div className="form-field">
-                      <label className="form-label">Valor unitário (R$)</label>
-                      <input type="number" min={0} step="0.01" className="form-input" value={valorPendente} onChange={e => setValorPendente(e.target.value)} />
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button type="button" className="btn btn-sm btn-ghost" onClick={() => setPecaPendente(null)}>Cancelar</button>
-                    <button type="button" className="btn btn-sm btn-amber" disabled={adicionandoPeca} onClick={adicionarPeca}>
-                      {adicionandoPeca ? '// salvando...' : 'Adicionar'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {item.itensConserto.length > 0 && (
-                <table className="table" style={{ marginTop: 8 }}>
-                  <thead>
-                    <tr>
-                      <th>Peça</th>
-                      <th>Qtd.</th>
-                      <th>Valor unit.</th>
-                      <th>Valor total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {item.itensConserto.map(ic => (
-                      <tr key={ic.id}>
-                        <td>{ic.descricao || '—'}</td>
-                        <td>{ic.quantidade}</td>
-                        <td>{formatarMoeda(ic.valorUnitario)}</td>
-                        <td>{formatarMoeda(ic.valorTotal)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
             </div>
           )}
 
