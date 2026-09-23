@@ -96,7 +96,10 @@ export default function ItemEntradaCard({ item, onAtualizado }: Props) {
             {item.quantidade > 1 ? ` · Qtd. ${item.quantidade}` : ''}
           </div>
         </div>
-        <span className={`badge ${STATUS_BADGE[item.status]}`}>{STATUS_LABEL[item.status]}</span>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {item.garantia && <span className="badge b-green">Garantia</span>}
+          <span className={`badge ${STATUS_BADGE[item.status]}`}>{STATUS_LABEL[item.status]}</span>
+        </div>
       </div>
 
       {erro && <div className="error-banner">{erro}</div>}
@@ -256,6 +259,7 @@ export default function ItemEntradaCard({ item, onAtualizado }: Props) {
 
       {acao === 'adicionar-conserto' && (
         <ItemConsertoModal
+          semCusto={item.garantia}
           onClose={() => setAcao(null)}
           onSalvar={dados => executar(() => itensEntradaApi.adicionarItemConserto(item.id, dados))}
           processando={processando}
@@ -328,8 +332,9 @@ function MotivoModal({
 }
 
 function ItemConsertoModal({
-  onClose, onSalvar, processando,
+  semCusto, onClose, onSalvar, processando,
 }: {
+  semCusto?: boolean
   onClose: () => void
   onSalvar: (dados: ItemConsertoCreateRequest) => void
   processando: boolean
@@ -339,20 +344,23 @@ function ItemConsertoModal({
     descricao: string
     quantidade: number
     valorUnitario: number
-  }>({ defaultValues: { tipo: 'PECA', quantidade: 1 } })
+  }>({ defaultValues: { tipo: 'PECA', quantidade: 1, valorUnitario: semCusto ? 0 : undefined } })
 
   const onSubmit = handleSubmit(d =>
     onSalvar({
       tipo: d.tipo,
       descricao: d.descricao || undefined,
       quantidade: Number(d.quantidade),
-      valorUnitario: Number(d.valorUnitario),
+      valorUnitario: semCusto ? 0 : Number(d.valorUnitario),
     })
   )
 
   return (
     <Modal title="Adicionar item de conserto" onClose={onClose}>
       <form onSubmit={onSubmit}>
+        {semCusto && (
+          <div className="form-hint" style={{ marginBottom: 12 }}>Garantia — sem custo.</div>
+        )}
         <div className="form-field" style={{ marginBottom: 12 }}>
           <label className="form-label">Tipo</label>
           <select className="form-select" {...register('tipo')}>
@@ -374,14 +382,16 @@ function ItemConsertoModal({
               {...register('quantidade', { required: true, min: 1 })}
             />
           </div>
-          <div className="form-field">
-            <label className="form-label">Valor unitário (R$)</label>
-            <input
-              type="number" min={0} step="0.01"
-              className={`form-input${errors.valorUnitario ? ' error' : ''}`}
-              {...register('valorUnitario', { required: true, min: 0 })}
-            />
-          </div>
+          {!semCusto && (
+            <div className="form-field">
+              <label className="form-label">Valor unitário (R$)</label>
+              <input
+                type="number" min={0} step="0.01"
+                className={`form-input${errors.valorUnitario ? ' error' : ''}`}
+                {...register('valorUnitario', { required: true, min: 0 })}
+              />
+            </div>
+          )}
         </div>
         <div className="modal-footer">
           <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>

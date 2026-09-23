@@ -6,7 +6,7 @@ import { itensEntradaAvaliacaoApi, osApi } from '../../api/os'
 import SugestaoTextArea from '../../components/SugestaoTextArea'
 import ItemEntradaCard from '../os/ItemEntradaCard'
 import type { ClienteDTO } from '../../types/cliente'
-import type { ItemEntradaDTO, OrdemServicoDTO, ResultadoAvaliacao } from '../../types/os'
+import type { GarantiaPecaDTO, ItemEntradaDTO, OrdemServicoDTO, ResultadoAvaliacao } from '../../types/os'
 import { RESULTADO_AVALIACAO_LABEL } from '../../types/os'
 
 const RESULTADOS: ResultadoAvaliacao[] = ['AJUSTE', 'ORCAMENTO', 'SEM_DEFEITO', 'SEM_CONSERTO']
@@ -75,9 +75,23 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
   const [causaDefeito, setCausaDefeito] = useState(item.causaDefeito ?? '')
   const [solucaoRecomendada, setSolucaoRecomendada] = useState(item.solucaoRecomendada ?? '')
   const [observacoesTecnicas, setObservacoesTecnicas] = useState(item.observacoesTecnicas ?? '')
-  const [garantia, setGarantia] = useState(item.garantia)
+  const [coberturas, setCoberturas] = useState<GarantiaPecaDTO[]>([])
+  const [garantiaPecaId, setGarantiaPecaId] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+
+  const precisaConserto = resultado === 'AJUSTE' || resultado === 'ORCAMENTO'
+
+  useEffect(() => {
+    if (!precisaConserto || !item.itemEstoqueId) {
+      setCoberturas([])
+      return
+    }
+    itensEntradaAvaliacaoApi.listarGarantiaDisponivel(item.id)
+      .then(setCoberturas)
+      .catch(() => setCoberturas([]))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [precisaConserto, item.id, item.itemEstoqueId])
 
   const toggleExpandir = async () => {
     if (!expandido && item.status === 'PENDENTE_AVALIACAO') {
@@ -101,7 +115,7 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
         causaDefeito: causaDefeito.trim() || undefined,
         solucaoRecomendada: solucaoRecomendada.trim() || undefined,
         observacoesTecnicas: observacoesTecnicas.trim() || undefined,
-        garantia,
+        garantiaPecaId: garantiaPecaId || undefined,
       })
       onAtualizado(atualizado)
       setExpandido(false)
@@ -147,10 +161,28 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
             </div>
           </div>
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 14, cursor: 'pointer' }}>
-            <input type="checkbox" checked={garantia} onChange={e => setGarantia(e.target.checked)} />
-            Em garantia
-          </label>
+          {coberturas.length > 0 && (
+            <div className="form-field" style={{ marginBottom: 14 }}>
+              <label className="form-label">Esse defeito é de uma peça em garantia?</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="radio" checked={garantiaPecaId === ''} onChange={() => setGarantiaPecaId('')} />
+                  Não — é um problema diferente
+                </label>
+                {coberturas.map(c => (
+                  <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                    <input type="radio" checked={garantiaPecaId === c.id} onChange={() => setGarantiaPecaId(c.id)} />
+                    {c.descricaoPeca ?? 'Peça'} — garantia até {new Date(c.dataFim).toLocaleDateString('pt-BR')}
+                  </label>
+                ))}
+              </div>
+              {garantiaPecaId && (
+                <div className="form-hint" style={{ marginTop: 4 }}>
+                  Coberto por garantia — sem custo, sem orçamento. Segue direto pra manutenção.
+                </div>
+              )}
+            </div>
+          )}
 
           {resultado === 'AJUSTE' && (
             <div className="form-field" style={{ marginBottom: 12 }}>

@@ -140,7 +140,16 @@ export interface SalvarAvaliacaoTecnicaRequest {
   causaDefeito?: string
   solucaoRecomendada?: string
   observacoesTecnicas?: string
-  garantia?: boolean
+  /** Cobertura de garantia (de itensEntradaAvaliacaoApi.listarGarantiaDisponivel) que o técnico está reivindicando, se houver. */
+  garantiaPecaId?: string
+}
+
+/** Cobertura de garantia ativa de uma peça trocada num reparo anterior do mesmo equipamento/acessório. */
+export interface GarantiaPecaDTO {
+  id: string
+  descricaoPeca?: string
+  dataInicio: string
+  dataFim: string
 }
 
 /**

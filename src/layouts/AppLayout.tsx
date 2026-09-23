@@ -1,6 +1,7 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthContext } from '../contexts/AuthContext'
 import { useState, useEffect } from 'react'
+import { notificacoesApi } from '../api/notificacoes'
 import type { RoleUsuario } from '../types/auth'
 import './app-layout.css'
 
@@ -20,6 +21,7 @@ interface NavItem {
   path: string
   icon: React.ReactNode
   roles?: RoleUsuario[]
+  badge?: number
 }
 
 interface NavSection {
@@ -32,6 +34,7 @@ export default function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const [avisoExpirando, setAvisoExpirando] = useState(false)
+  const [naoLidas, setNaoLidas] = useState(0)
 
   useEffect(() => {
     const verificar = () => {
@@ -50,6 +53,14 @@ export default function AppLayout() {
     const t = setInterval(verificar, 60_000)
     return () => clearInterval(t)
   }, [location.pathname])
+
+  useEffect(() => {
+    if (usuario?.role !== 'ADMIN') return
+    const buscar = () => notificacoesApi.contarNaoLidas().then(setNaoLidas).catch(() => {})
+    buscar()
+    const t = setInterval(buscar, 60_000)
+    return () => clearInterval(t)
+  }, [location.pathname, usuario?.role])
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + '/')
@@ -135,6 +146,18 @@ export default function AppLayout() {
             </svg>
           ),
         },
+        {
+          label: 'Notificações',
+          path: '/notificacoes',
+          roles: ['ADMIN'],
+          badge: naoLidas,
+          icon: (
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M8 2a4 4 0 0 0-4 4v2.5L2.5 11h11L12 8.5V6a4 4 0 0 0-4-4z" />
+              <path d="M6.5 13a1.5 1.5 0 0 0 3 0" />
+            </svg>
+          ),
+        },
       ],
     },
   ]
@@ -168,9 +191,15 @@ export default function AppLayout() {
                   key={item.path}
                   className={`nav-item${isActive(item.path) ? ' active' : ''}`}
                   onClick={() => navigate(item.path)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
                 >
-                  <span className="icon">{item.icon}</span>
-                  {item.label}
+                  <span style={{ display: 'flex', alignItems: 'center' }}>
+                    <span className="icon">{item.icon}</span>
+                    {item.label}
+                  </span>
+                  {!!item.badge && (
+                    <span className="badge b-amber" style={{ fontSize: 11 }}>{item.badge}</span>
+                  )}
                 </div>
               ))}
             </div>

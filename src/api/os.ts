@@ -1,6 +1,7 @@
 import api from './axios'
 import type {
   FilaManutencaoOSDTO,
+  GarantiaPecaDTO,
   HistoricoOSItemDTO,
   ItemEntradaDTO,
   OrdemServicoCreateRequest,
@@ -58,4 +59,7 @@ export const itensEntradaAvaliacaoApi = {
 
   confirmarAguardandoPeca: (id: string) =>
     api.patch<ItemEntradaDTO>(`/v1/itens-entrada/${id}/confirmar-aguardando-peca`).then(r => r.data),
+
+  listarGarantiaDisponivel: (id: string) =>
+    api.get<GarantiaPecaDTO[]>(`/v1/itens-entrada/${id}/garantia-disponivel`).then(r => r.data),
 }
