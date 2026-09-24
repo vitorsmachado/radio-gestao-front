@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { itensEntradaApi } from '../../api/itensEntrada'
 import { osApi } from '../../api/os'
+import { useAuthContext } from '../../contexts/AuthContext'
 import type { OrdemServicoResumoDTO, StatusOS } from '../../types/os'
 import type { PageResponse } from '../../types/pagination'
 
@@ -40,6 +42,7 @@ function formatarDataHora(data?: string): string {
 
 export default function OsLista() {
   const navigate = useNavigate()
+  const { usuario } = useAuthContext()
   const [pagina, setPagina] = useState<PageResponse<OrdemServicoResumoDTO> | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -71,6 +74,23 @@ export default function OsLista() {
     e.preventDefault()
     setPage(0)
     setBuscaAplicada(busca)
+  }
+
+  const abrirOS = async (osId: string) => {
+    const podeIrParaManutencao = usuario?.role === 'TECNICO' || usuario?.role === 'ADMIN'
+    if (podeIrParaManutencao) {
+      try {
+        const itens = await itensEntradaApi.listarPorOS(osId)
+        const pendenteAvaliacao = itens.some(i => i.status === 'PENDENTE_AVALIACAO' || i.status === 'EM_AVALIACAO')
+        if (pendenteAvaliacao) {
+          navigate(`/manutencao/${osId}`)
+          return
+        }
+      } catch {
+        // não crítico — segue pra tela normal da OS
+      }
+    }
+    navigate(`/os/${osId}`)
   }
 
   return (
@@ -137,7 +157,7 @@ export default function OsLista() {
             </thead>
             <tbody>
               {pagina.content.map(os => (
-                <tr key={os.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/os/${os.id}`)}>
+                <tr key={os.id} style={{ cursor: 'pointer' }} onClick={() => abrirOS(os.id)}>
                   <td>{os.numero}</td>
                   <td>
                     {os.clienteNome ?? '—'}
