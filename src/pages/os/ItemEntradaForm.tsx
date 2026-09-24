@@ -1,14 +1,14 @@
 import { useForm } from 'react-hook-form'
 import Modal from '../../components/Modal'
-import type { ItemEntradaCreateRequest, TipoItem } from '../../types/os'
+import { FAIXA_EQUIPAMENTO_LABEL, type FaixaEquipamento, type ItemEntradaCreateRequest, type TipoItem } from '../../types/os'
 
 interface FormValues {
   tipoItem: TipoItem
   descricao: string
   marca: string
   modelo: string
+  faixa: FaixaEquipamento | ''
   numeroSerie: string
-  patrimonio: string
   codigoCliente: string
   defeitoRelatado: string
   rastreamento: 'NS' | 'QUANTIDADE'
@@ -38,8 +38,8 @@ export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }
       descricao: d.descricao.trim(),
       marca: d.marca.trim() || undefined,
       modelo: d.modelo.trim() || undefined,
+      faixa: d.tipoItem === 'EQUIPAMENTO' && d.faixa ? d.faixa : undefined,
       numeroSerie: porQuantidade ? undefined : (d.numeroSerie.trim() || undefined),
-      patrimonio: porQuantidade ? undefined : (d.patrimonio.trim() || undefined),
       codigoCliente: d.codigoCliente.trim() || undefined,
       quantidade: porQuantidade ? (Number(d.quantidade) || 1) : 1,
       defeitoRelatado: d.defeitoRelatado.trim() || undefined,
@@ -78,6 +78,18 @@ export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }
           </div>
         </div>
 
+        {tipoItem === 'EQUIPAMENTO' && (
+          <div className="form-field" style={{ marginBottom: 12, maxWidth: 200 }}>
+            <label className="form-label">Faixa</label>
+            <select className="form-select" {...register('faixa')}>
+              <option value="">Selecione</option>
+              {Object.entries(FAIXA_EQUIPAMENTO_LABEL).map(([valor, label]) => (
+                <option key={valor} value={valor}>{label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {tipoItem === 'ACESSORIO' && (
           <div className="form-field" style={{ marginBottom: 12 }}>
             <label className="form-label">Rastreamento</label>
@@ -106,15 +118,9 @@ export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }
             />
           </div>
         ) : (
-          <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
-            <div className="form-field">
-              <label className="form-label">Número de série</label>
-              <input className="form-input" {...register('numeroSerie')} />
-            </div>
-            <div className="form-field">
-              <label className="form-label">Patrimônio</label>
-              <input className="form-input" {...register('patrimonio')} />
-            </div>
+          <div className="form-field" style={{ marginBottom: 12 }}>
+            <label className="form-label">Número de série</label>
+            <input className="form-input" {...register('numeroSerie')} />
           </div>
         )}
 

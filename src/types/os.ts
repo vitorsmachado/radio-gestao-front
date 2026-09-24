@@ -17,6 +17,15 @@ export type StatusItemEntrada =
 export type TipoItem = 'EQUIPAMENTO' | 'ACESSORIO' | 'PECA' | 'SERVICO'
 export type TipoItemConserto = 'PECA' | 'MAO_DE_OBRA' | 'DESLOCAMENTO'
 
+/** Só relevante para equipamento (rádio) — faixa de frequência. */
+export type FaixaEquipamento = 'VHF' | 'UHF' | 'DUAL_BAND'
+
+export const FAIXA_EQUIPAMENTO_LABEL: Record<FaixaEquipamento, string> = {
+  VHF: 'VHF',
+  UHF: 'UHF',
+  DUAL_BAND: 'Dual band',
+}
+
 export type ResultadoAvaliacao = 'AJUSTE' | 'ORCAMENTO' | 'SEM_DEFEITO' | 'SEM_CONSERTO'
 
 export const RESULTADO_AVALIACAO_LABEL: Record<ResultadoAvaliacao, string> = {
@@ -116,6 +125,7 @@ export interface ItemEntradaDTO {
   quantidade: number
   marca?: string
   modelo?: string
+  faixa?: FaixaEquipamento
   defeitoRelatado?: string
   avaliacaoTecnica?: string
   semDefeito: boolean
@@ -179,6 +189,7 @@ export interface ItemEntradaCreateRequest {
   quantidade?: number
   marca?: string
   modelo?: string
+  faixa?: FaixaEquipamento
   defeitoRelatado?: string
   garantia?: boolean
 }

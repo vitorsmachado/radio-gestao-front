@@ -9,7 +9,15 @@ import CatalogoSelector from '../../components/CatalogoSelector'
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges'
 import type { ClienteDTO } from '../../types/cliente'
 import type { CatalogoModeloDTO } from '../../types/catalogo'
-import { TIPO_OS_LABEL, type ItemEntradaCreateRequest, type OrdemServicoDTO, type TipoItem, type TipoOS } from '../../types/os'
+import {
+  FAIXA_EQUIPAMENTO_LABEL,
+  TIPO_OS_LABEL,
+  type FaixaEquipamento,
+  type ItemEntradaCreateRequest,
+  type OrdemServicoDTO,
+  type TipoItem,
+  type TipoOS,
+} from '../../types/os'
 import ClienteRapidoModal from '../clientes/ClienteRapidoModal'
 
 interface FormValues {
@@ -26,6 +34,7 @@ interface ItemRascunho {
   descricao: string
   marca: string
   modelo: string
+  faixa: FaixaEquipamento | ''
   numeroSerie: string
   patrimonio: string
   codigoCliente: string
@@ -76,6 +85,7 @@ function itemRascunhoVazio(): ItemRascunho {
     descricao: '',
     marca: '',
     modelo: '',
+    faixa: '',
     numeroSerie: '',
     patrimonio: '',
     codigoCliente: '',
@@ -94,6 +104,7 @@ function paraCreateRequest(osId: string, item: ItemRascunho): ItemEntradaCreateR
     descricao: item.descricao.trim(),
     marca: item.marca.trim() || undefined,
     modelo: item.modelo.trim() || undefined,
+    faixa: item.tipoItem === 'EQUIPAMENTO' && item.faixa ? item.faixa : undefined,
     numeroSerie: porQuantidade ? undefined : (item.numeroSerie.trim() || undefined),
     patrimonio: porQuantidade ? undefined : (item.patrimonio.trim() || undefined),
     codigoCliente: item.codigoCliente.trim() || undefined,
@@ -494,6 +505,7 @@ function ItemRascunhoCard({
     descricao: '',
     marca: '',
     modelo: '',
+    faixa: '',
     numeroSerie: '',
     patrimonio: '',
     codigoCliente: '',
@@ -514,6 +526,7 @@ function ItemRascunhoCard({
           <div className="page-sub">
             {TIPO_ITEM_LABEL[item.tipoItem]}
             {[item.marca, item.modelo].filter(Boolean).length > 0 ? ` · ${[item.marca, item.modelo].filter(Boolean).join(' / ')}` : ''}
+            {item.faixa ? ` · ${FAIXA_EQUIPAMENTO_LABEL[item.faixa]}` : ''}
             {item.numeroSerie ? ` · S/N ${item.numeroSerie}` : ''}
             {item.quantidade > 1 ? ` · Qtd. ${item.quantidade}` : ''}
             {item.catalogo?.valorReferencia != null ? ` · ref. ${formatarValor(item.catalogo.valorReferencia)}` : ''}
@@ -583,6 +596,21 @@ function ItemRascunhoCard({
             </div>
           </div>
 
+          {item.tipoItem === 'EQUIPAMENTO' && (
+            <div className="form-field" style={{ marginBottom: 12, maxWidth: 200 }}>
+              <label className="form-label">Faixa</label>
+              <select
+                className="form-select" value={item.faixa}
+                onChange={e => onAtualizar({ faixa: e.target.value as FaixaEquipamento | '' })}
+              >
+                <option value="">Selecione</option>
+                {Object.entries(FAIXA_EQUIPAMENTO_LABEL).map(([valor, label]) => (
+                  <option key={valor} value={valor}>{label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {item.tipoItem === 'ACESSORIO' && (
             <div className="form-field" style={{ marginBottom: 12 }}>
               <label className="form-label">Rastreamento</label>
@@ -618,15 +646,9 @@ function ItemRascunhoCard({
               />
             </div>
           ) : (
-            <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
-              <div className="form-field">
-                <label className="form-label">Número de série</label>
-                <input className="form-input" value={item.numeroSerie} onChange={e => onAtualizar({ numeroSerie: e.target.value })} />
-              </div>
-              <div className="form-field">
-                <label className="form-label">Patrimônio</label>
-                <input className="form-input" value={item.patrimonio} onChange={e => onAtualizar({ patrimonio: e.target.value })} />
-              </div>
+            <div className="form-field" style={{ marginBottom: 12 }}>
+              <label className="form-label">Número de série</label>
+              <input className="form-input" value={item.numeroSerie} onChange={e => onAtualizar({ numeroSerie: e.target.value })} />
             </div>
           )}
 

@@ -3,12 +3,13 @@ import { useForm } from 'react-hook-form'
 import { itensEntradaApi } from '../../api/itensEntrada'
 import { itensEntradaAvaliacaoApi } from '../../api/os'
 import Modal from '../../components/Modal'
-import type {
-  AvaliarItemRequest,
-  ItemConsertoCreateRequest,
-  ItemEntradaDTO,
-  StatusItemEntrada,
-  TipoItemConserto,
+import {
+  FAIXA_EQUIPAMENTO_LABEL,
+  type AvaliarItemRequest,
+  type ItemConsertoCreateRequest,
+  type ItemEntradaDTO,
+  type StatusItemEntrada,
+  type TipoItemConserto,
 } from '../../types/os'
 
 const STATUS_LABEL: Record<StatusItemEntrada, string> = {
@@ -90,8 +91,8 @@ export default function ItemEntradaCard({ item, onAtualizado }: Props) {
           <div style={{ fontWeight: 600 }}>{item.descricao}</div>
           <div className="page-sub">
             {[item.marca, item.modelo].filter(Boolean).join(' / ') || '—'}
+            {item.faixa ? ` · ${FAIXA_EQUIPAMENTO_LABEL[item.faixa]}` : ''}
             {item.numeroSerie ? ` · S/N ${item.numeroSerie}` : ''}
-            {item.patrimonio ? ` · Pat. ${item.patrimonio}` : ''}
             {item.codigoCliente ? ` · Cód. cliente ${item.codigoCliente}` : ''}
             {item.quantidade > 1 ? ` · Qtd. ${item.quantidade}` : ''}
           </div>
