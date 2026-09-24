@@ -252,7 +252,7 @@ export default function AvaliacaoItemCard({
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            {item.status === 'PENDENTE_AVALIACAO' && onRemovido ? (
+            {(item.status === 'PENDENTE_AVALIACAO' || item.status === 'EM_AVALIACAO') && onRemovido ? (
               <button type="button" className="btn btn-danger" disabled={removendo} onClick={remover}>
                 Remover item
               </button>
