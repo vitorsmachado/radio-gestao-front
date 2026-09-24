@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
+import { configuracoesApi } from '../../api/configuracoes'
 import { itensEntradaApi } from '../../api/itensEntrada'
 import { orcamentosApi } from '../../api/orcamentos'
 import Modal from '../../components/Modal'
@@ -73,6 +74,11 @@ export default function OrcamentoDetalhe() {
   const [editando, setEditando] = useState(false)
   const [agrupamento, setAgrupamento] = useState<AgrupamentoOrcamento>('EQUIPAMENTO')
   const [modalMotivo, setModalMotivo] = useState<{ tipo: 'cancelar' } | { tipo: 'nao-autorizar'; itemId: string } | null>(null)
+  const [valorMaoDeObraPadrao, setValorMaoDeObraPadrao] = useState(0)
+
+  useEffect(() => {
+    configuracoesApi.buscar().then(c => setValorMaoDeObraPadrao(c.valorMaoDeObraPadrao)).catch(() => {})
+  }, [])
 
   const carregar = () => {
     if (!id) return
@@ -88,6 +94,14 @@ export default function OrcamentoDetalhe() {
   useEffect(carregar, [id])
 
   const consolidado = useMemo(() => (orc ? consolidar(orc.itens) : []), [orc])
+
+  const totalMaoDeObra = useMemo(() => {
+    const linhas = (orc?.itens ?? []).flatMap(item => item.itensConserto).filter(ic => ic.tipo === 'MAO_DE_OBRA')
+    return {
+      quantidade: linhas.reduce((s, ic) => s + ic.quantidade, 0),
+      valor: linhas.reduce((s, ic) => s + ic.valorTotal, 0),
+    }
+  }, [orc])
 
   const salvarCondicoes = async (dados: AtualizarOrcamentoRequest) => {
     if (!id) return
@@ -254,6 +268,7 @@ export default function OrcamentoDetalhe() {
           key={item.id}
           item={item}
           podeEditarPecas={orc.status === 'RASCUNHO'}
+          valorMaoDeObraPadrao={valorMaoDeObraPadrao}
           processando={processando}
           onMudou={carregar}
           onAutorizar={() => autorizarItem(item.id)}
@@ -290,6 +305,12 @@ export default function OrcamentoDetalhe() {
       )}
 
       <div className="section-card" style={{ marginTop: 8 }}>
+        {totalMaoDeObra.quantidade > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--text3)', marginBottom: 6 }}>
+            <span>Mão de obra ({totalMaoDeObra.quantidade})</span>
+            <span>{formatarMoeda(totalMaoDeObra.valor)}</span>
+          </div>
+        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 600 }}>
           <span>Valor total</span>
           <span>{formatarMoeda(orc.valorTotal)}</span>
@@ -309,10 +330,11 @@ export default function OrcamentoDetalhe() {
 }
 
 function ItemOrcamentoCard({
-  item, podeEditarPecas, processando, onMudou, onAutorizar, onNaoAutorizar,
+  item, podeEditarPecas, valorMaoDeObraPadrao, processando, onMudou, onAutorizar, onNaoAutorizar,
 }: {
   item: ItemEntradaDTO
   podeEditarPecas: boolean
+  valorMaoDeObraPadrao: number
   processando: boolean
   onMudou: () => void
   onAutorizar: () => void
@@ -323,6 +345,11 @@ function ItemOrcamentoCard({
   const [valorPendente, setValorPendente] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [editandoValorId, setEditandoValorId] = useState<string | null>(null)
+  const [valorEditado, setValorEditado] = useState('')
+  const [adicionandoMaoDeObra, setAdicionandoMaoDeObra] = useState(false)
+  const [qtdMaoDeObra, setQtdMaoDeObra] = useState('1')
+  const [valorMaoDeObra, setValorMaoDeObra] = useState('')
 
   const adicionarPeca = async () => {
     if (!pecaPendente) return
@@ -348,6 +375,32 @@ function ItemOrcamentoCard({
     }
   }
 
+  const abrirMaoDeObra = () => {
+    setQtdMaoDeObra('1')
+    setValorMaoDeObra(valorMaoDeObraPadrao > 0 ? String(valorMaoDeObraPadrao) : '')
+    setAdicionandoMaoDeObra(true)
+  }
+
+  const adicionarMaoDeObra = async () => {
+    setSalvando(true)
+    setErro(null)
+    try {
+      await itensEntradaApi.adicionarItemConserto(item.id, {
+        tipo: 'MAO_DE_OBRA',
+        descricao: 'Mão de obra',
+        quantidade: Number(qtdMaoDeObra) || 1,
+        valorUnitario: Number(valorMaoDeObra) || 0,
+      })
+      setAdicionandoMaoDeObra(false)
+      onMudou()
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setErro(msg ?? 'Não foi possível adicionar a mão de obra.')
+    } finally {
+      setSalvando(false)
+    }
+  }
+
   const removerItemConserto = async (itemConsertoId: string) => {
     setSalvando(true)
     setErro(null)
@@ -361,7 +414,35 @@ function ItemOrcamentoCard({
     }
   }
 
+  const abrirEdicaoValor = (itemConsertoId: string, valorAtual: number) => {
+    setEditandoValorId(itemConsertoId)
+    setValorEditado(valorAtual > 0 ? String(valorAtual) : '')
+  }
+
+  const salvarValor = async (itemConsertoId: string) => {
+    setSalvando(true)
+    setErro(null)
+    try {
+      await itensEntradaApi.atualizarValorItemConserto(item.id, itemConsertoId, Number(valorEditado) || 0)
+      setEditandoValorId(null)
+      onMudou()
+    } catch {
+      setErro('Não foi possível salvar o valor.')
+    } finally {
+      setSalvando(false)
+    }
+  }
+
   const podeAprovar = item.status === 'PENDENTE_AUTORIZACAO' || item.status === 'NAO_AUTORIZADO'
+
+  const itensConsertoOrdenados = [...item.itensConserto].sort((a, b) =>
+    (a.tipo === 'MAO_DE_OBRA' ? 1 : 0) - (b.tipo === 'MAO_DE_OBRA' ? 1 : 0)
+  )
+  const maoDeObraDoItem = item.itensConserto.filter(ic => ic.tipo === 'MAO_DE_OBRA')
+  const totalMaoDeObraItem = {
+    quantidade: maoDeObraDoItem.reduce((s, ic) => s + ic.quantidade, 0),
+    valor: maoDeObraDoItem.reduce((s, ic) => s + ic.valorTotal, 0),
+  }
 
   return (
     <div className="section-card" style={{ marginBottom: 10 }}>
@@ -399,12 +480,33 @@ function ItemOrcamentoCard({
             </tr>
           </thead>
           <tbody>
-            {item.itensConserto.map(ic => (
+            {itensConsertoOrdenados.map(ic => (
               <tr key={ic.id}>
                 <td>{TIPO_CONSERTO_LABEL[ic.tipo]}</td>
                 <td>{ic.descricao || '—'}</td>
                 <td>{ic.quantidade}</td>
-                <td>{formatarMoeda(ic.valorUnitario)}</td>
+                <td>
+                  {podeEditarPecas && editandoValorId === ic.id ? (
+                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                      <input
+                        type="number" min={0} step="0.01" autoFocus
+                        className="form-input" style={{ width: 90, padding: '2px 6px' }}
+                        value={valorEditado} onChange={e => setValorEditado(e.target.value)}
+                      />
+                      <button type="button" className="btn btn-sm btn-amber" disabled={salvando} onClick={() => salvarValor(ic.id)}>OK</button>
+                    </div>
+                  ) : podeEditarPecas ? (
+                    <span
+                      style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}
+                      title="Clique para definir o valor"
+                      onClick={() => abrirEdicaoValor(ic.id, ic.valorUnitario)}
+                    >
+                      {ic.valorUnitario > 0 ? formatarMoeda(ic.valorUnitario) : '— definir valor'}
+                    </span>
+                  ) : (
+                    formatarMoeda(ic.valorUnitario)
+                  )}
+                </td>
                 <td>{formatarMoeda(ic.valorTotal)}</td>
                 {podeEditarPecas && (
                   <td>
@@ -416,6 +518,15 @@ function ItemOrcamentoCard({
                 )}
               </tr>
             ))}
+            {maoDeObraDoItem.length > 0 && (
+              <tr>
+                <td colSpan={2} style={{ textAlign: 'right', color: 'var(--text3)' }}>Mão de obra</td>
+                <td style={{ color: 'var(--text3)' }}>{totalMaoDeObraItem.quantidade}</td>
+                <td></td>
+                <td style={{ color: 'var(--text3)' }}>{formatarMoeda(totalMaoDeObraItem.valor)}</td>
+                {podeEditarPecas && <td></td>}
+              </tr>
+            )}
             <tr>
               <td colSpan={4} style={{ textAlign: 'right', fontWeight: 600 }}>Total do item</td>
               <td style={{ fontWeight: 600 }}>{formatarMoeda(item.valorTotalConserto)}</td>
@@ -456,6 +567,27 @@ function ItemOrcamentoCard({
               </div>
             </div>
           )}
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginTop: 8, flexWrap: 'wrap' }}>
+            <button type="button" className={`btn btn-sm${adicionandoMaoDeObra ? ' btn-amber' : ''}`} onClick={() => (adicionandoMaoDeObra ? setAdicionandoMaoDeObra(false) : abrirMaoDeObra())}>
+              + Adicionar mão de obra
+            </button>
+            {adicionandoMaoDeObra && (
+              <>
+                <div className="form-field" style={{ width: 90 }}>
+                  <label className="form-label">Qtd.</label>
+                  <input type="number" min={1} className="form-input" value={qtdMaoDeObra} onChange={e => setQtdMaoDeObra(e.target.value)} />
+                </div>
+                <div className="form-field" style={{ width: 140 }}>
+                  <label className="form-label">Valor (R$)</label>
+                  <input type="number" min={0} step="0.01" className="form-input" value={valorMaoDeObra} onChange={e => setValorMaoDeObra(e.target.value)} />
+                </div>
+                <button type="button" className="btn btn-sm btn-amber" disabled={salvando} onClick={adicionarMaoDeObra}>
+                  {salvando ? '// salvando...' : 'OK'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
 

@@ -3,11 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { clientesApi } from '../../api/clientes'
 import { itensEntradaApi } from '../../api/itensEntrada'
 import { itensEntradaAvaliacaoApi, osApi } from '../../api/os'
+import PecaCompativelSelector from '../../components/PecaCompativelSelector'
 import SugestaoTextArea from '../../components/SugestaoTextArea'
 import ItemEntradaCard from '../os/ItemEntradaCard'
 import type { ClienteDTO } from '../../types/cliente'
 import type { GarantiaPecaDTO, ItemEntradaDTO, OrdemServicoDTO, ResultadoAvaliacao } from '../../types/os'
 import { RESULTADO_AVALIACAO_LABEL } from '../../types/os'
+import type { PecaDTO } from '../../types/peca'
 
 const RESULTADOS: ResultadoAvaliacao[] = ['AJUSTE', 'ORCAMENTO', 'SEM_DEFEITO', 'SEM_CONSERTO']
 
@@ -77,10 +79,14 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
   const [observacoesTecnicas, setObservacoesTecnicas] = useState(item.observacoesTecnicas ?? '')
   const [coberturas, setCoberturas] = useState<GarantiaPecaDTO[]>([])
   const [garantiaPecaId, setGarantiaPecaId] = useState('')
+  const [pecaPendente, setPecaPendente] = useState<PecaDTO | null>(null)
+  const [qtdPendente, setQtdPendente] = useState('1')
+  const [adicionandoPeca, setAdicionandoPeca] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   const precisaConserto = resultado === 'AJUSTE' || resultado === 'ORCAMENTO'
+  const mostrarSeletorPeca = precisaConserto && !garantiaPecaId
 
   useEffect(() => {
     if (!precisaConserto || !item.itemEstoqueId) {
@@ -92,6 +98,38 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
       .catch(() => setCoberturas([]))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [precisaConserto, item.id, item.itemEstoqueId])
+
+  const adicionarPeca = async () => {
+    if (!pecaPendente) return
+    setAdicionandoPeca(true)
+    setErro(null)
+    try {
+      const atualizado = await itensEntradaApi.adicionarItemConserto(item.id, {
+        tipo: 'PECA',
+        itemEstoqueId: pecaPendente.id,
+        descricao: pecaPendente.descricao,
+        quantidade: Number(qtdPendente) || 1,
+        valorUnitario: 0,
+      })
+      onAtualizado(atualizado)
+      setPecaPendente(null)
+      setQtdPendente('1')
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setErro(msg ?? 'Não foi possível adicionar a peça.')
+    } finally {
+      setAdicionandoPeca(false)
+    }
+  }
+
+  const removerPeca = async (itemConsertoId: string) => {
+    setErro(null)
+    try {
+      onAtualizado(await itensEntradaApi.removerItemConserto(item.id, itemConsertoId))
+    } catch {
+      setErro('Não foi possível remover a peça.')
+    }
+  }
 
   const toggleExpandir = async () => {
     if (!expandido && item.status === 'PENDENTE_AVALIACAO') {
@@ -188,6 +226,55 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
             <div className="form-field" style={{ marginBottom: 12 }}>
               <label className="form-label">Qual o ajuste</label>
               <input className="form-input" value={detalheAjuste} onChange={e => setDetalheAjuste(e.target.value)} />
+            </div>
+          )}
+
+          {mostrarSeletorPeca && (
+            <div className="form-field" style={{ marginBottom: 12 }}>
+              <label className="form-label">Peças</label>
+              <div className="form-hint" style={{ marginBottom: 6 }}>
+                Só escolha a peça — o valor é definido depois, no orçamento.
+              </div>
+              <PecaCompativelSelector catalogoModeloId={item.catalogoModeloId} onSelecionar={setPecaPendente} />
+
+              {pecaPendente && (
+                <div className="section-card" style={{ marginTop: 8, background: 'var(--bg3)' }}>
+                  <div style={{ fontSize: 13, marginBottom: 8 }}>{pecaPendente.descricao}</div>
+                  <div className="form-field" style={{ marginBottom: 8, maxWidth: 120 }}>
+                    <label className="form-label">Quantidade</label>
+                    <input type="number" min={1} className="form-input" value={qtdPendente} onChange={e => setQtdPendente(e.target.value)} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    <button type="button" className="btn btn-sm" onClick={() => setPecaPendente(null)}>Cancelar</button>
+                    <button type="button" className="btn btn-sm btn-amber" disabled={adicionandoPeca} onClick={adicionarPeca}>
+                      {adicionandoPeca ? '// salvando...' : 'Adicionar'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {item.itensConserto.length > 0 && (
+                <table className="table" style={{ marginTop: 8 }}>
+                  <thead>
+                    <tr>
+                      <th>Peça</th>
+                      <th>Qtd.</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {item.itensConserto.map(ic => (
+                      <tr key={ic.id}>
+                        <td>{ic.descricao || '—'}</td>
+                        <td>{ic.quantidade}</td>
+                        <td>
+                          <button type="button" className="btn btn-sm" onClick={() => removerPeca(ic.id)}>✕</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
 

@@ -48,4 +48,7 @@ export const itensEntradaApi = {
 
   removerItemConserto: (id: string, itemConsertoId: string) =>
     api.delete<ItemEntradaDTO>(`/v1/itens-entrada/${id}/itens-conserto/${itemConsertoId}`).then(r => r.data),
+
+  atualizarValorItemConserto: (id: string, itemConsertoId: string, valorUnitario: number) =>
+    api.patch<ItemEntradaDTO>(`/v1/itens-entrada/${id}/itens-conserto/${itemConsertoId}`, { valorUnitario }).then(r => r.data),
 }
