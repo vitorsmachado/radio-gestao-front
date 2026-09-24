@@ -95,12 +95,15 @@ export default function AvaliacaoTecnicaFields({
     <>
       <div className="form-field" style={{ marginBottom: 12 }}>
         <label className="form-label">Resultado</label>
-        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {RESULTADOS.map(r => (
-            <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
-              <input type="radio" checked={valores.resultado === r} onChange={() => onAtualizar({ resultado: r })} />
+            <button
+              key={r} type="button"
+              className={`btn btn-sm${valores.resultado === r ? ' btn-amber' : ''}`}
+              onClick={() => onAtualizar({ resultado: r })}
+            >
               {RESULTADO_AVALIACAO_LABEL[r]}
-            </label>
+            </button>
           ))}
         </div>
       </div>

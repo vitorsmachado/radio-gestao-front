@@ -287,19 +287,32 @@ function AvaliarModal({
   onSalvar: (dados: AvaliarItemRequest) => void
   processando: boolean
 }) {
-  const { register, handleSubmit } = useForm<AvaliarItemRequest>({ defaultValues: inicial })
+  const [avaliacaoTecnica, setAvaliacaoTecnica] = useState(inicial.avaliacaoTecnica)
+  const [semDefeito, setSemDefeito] = useState(inicial.semDefeito)
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSalvar({ avaliacaoTecnica, semDefeito })
+  }
 
   return (
     <Modal title="Avaliar item" onClose={onClose}>
-      <form onSubmit={handleSubmit(onSalvar)}>
+      <form onSubmit={submit}>
         <div className="form-field" style={{ marginBottom: 12 }}>
           <label className="form-label">Avaliação técnica</label>
-          <textarea className="form-input" rows={4} {...register('avaliacaoTecnica')} />
+          <textarea className="form-input" rows={4} value={avaliacaoTecnica} onChange={e => setAvaliacaoTecnica(e.target.value)} />
         </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 12 }}>
-          <input type="checkbox" {...register('semDefeito')} />
-          Sem defeito encontrado
-        </label>
+        <div className="form-field" style={{ marginBottom: 12 }}>
+          <label className="form-label">Resultado</label>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button type="button" className={`btn btn-sm${!semDefeito ? ' btn-amber' : ''}`} onClick={() => setSemDefeito(false)}>
+              Com defeito
+            </button>
+            <button type="button" className={`btn btn-sm${semDefeito ? ' btn-amber' : ''}`} onClick={() => setSemDefeito(true)}>
+              Sem defeito
+            </button>
+          </div>
+        </div>
         <div className="modal-footer">
           <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
           <button type="submit" className="btn btn-amber" disabled={processando}>Salvar</button>
