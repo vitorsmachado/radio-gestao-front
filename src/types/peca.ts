@@ -9,6 +9,7 @@ export interface PecaDTO {
   descricao: string
   quantidadeDisponivel: number
   quantidadeMinima?: number
+  valorUnitario?: number
   status: StatusItemEstoque
   catalogoModeloId?: string
   observacoes?: string
@@ -24,6 +25,7 @@ export interface PecaCreateRequest {
   descricao: string
   quantidadeDisponivel?: number
   quantidadeMinima?: number
+  valorUnitario?: number
   catalogoModeloId?: string
   marca?: string
   modelo?: string
@@ -34,6 +36,7 @@ export interface PecaUpdateRequest {
   codigo?: string
   descricao?: string
   quantidadeMinima?: number
+  valorUnitario?: number
   observacoes?: string
   localizacaoFisica?: string
 }

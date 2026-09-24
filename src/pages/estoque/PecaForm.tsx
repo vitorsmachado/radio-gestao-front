@@ -16,6 +16,7 @@ interface FormValues {
   modelo: string
   quantidadeDisponivel: number
   quantidadeMinima: number
+  valorUnitario: number
   observacoes: string
   localizacaoFisica: string
 }
@@ -49,6 +50,7 @@ export default function PecaForm({ peca, onClose, onSalvo }: Props) {
       descricao: peca?.descricao ?? '',
       quantidadeDisponivel: 0,
       quantidadeMinima: peca?.quantidadeMinima,
+      valorUnitario: peca?.valorUnitario,
       observacoes: peca?.observacoes ?? '',
       localizacaoFisica: peca?.localizacaoFisica ?? '',
     },
@@ -116,6 +118,7 @@ export default function PecaForm({ peca, onClose, onSalvo }: Props) {
           codigo: d.codigo.trim() || undefined,
           descricao: d.descricao.trim(),
           quantidadeMinima: d.quantidadeMinima !== undefined && String(d.quantidadeMinima) !== '' ? Number(d.quantidadeMinima) : undefined,
+          valorUnitario: d.valorUnitario !== undefined && String(d.valorUnitario) !== '' ? Number(d.valorUnitario) : undefined,
           observacoes: d.observacoes.trim() || undefined,
           localizacaoFisica: d.localizacaoFisica.trim() || undefined,
         })
@@ -125,6 +128,7 @@ export default function PecaForm({ peca, onClose, onSalvo }: Props) {
           descricao: d.descricao.trim(),
           quantidadeDisponivel: Number(d.quantidadeDisponivel) || 0,
           quantidadeMinima: d.quantidadeMinima ? Number(d.quantidadeMinima) : undefined,
+          valorUnitario: d.valorUnitario ? Number(d.valorUnitario) : undefined,
           catalogoModeloId: catalogoSelecionado?.id,
           marca: d.marca.trim() || undefined,
           modelo: d.modelo.trim() || undefined,
@@ -238,6 +242,14 @@ export default function PecaForm({ peca, onClose, onSalvo }: Props) {
           <div className="form-field">
             <label className="form-label">Quantidade mínima (alerta)</label>
             <input type="number" min={0} className="form-input" {...register('quantidadeMinima')} />
+          </div>
+        </div>
+
+        <div className="form-field" style={{ marginBottom: 12, maxWidth: 200 }}>
+          <label className="form-label">Valor unitário (R$)</label>
+          <input type="number" min={0} step="0.01" className="form-input" {...register('valorUnitario')} />
+          <div className="form-hint" style={{ marginTop: 4 }}>
+            Preenche automaticamente ao escolher a peça num conserto — dá pra mudar em cada item.
           </div>
         </div>
 
