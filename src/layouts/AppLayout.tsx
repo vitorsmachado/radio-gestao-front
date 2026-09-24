@@ -160,6 +160,22 @@ export default function AppLayout() {
         },
       ],
     },
+    {
+      title: 'Sistema',
+      items: [
+        {
+          label: 'Configurações',
+          path: '/configuracoes',
+          roles: ['ADMIN'],
+          icon: (
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="8" cy="8" r="2.5" />
+              <path d="M8 2v2M8 12v2M2 8h2M12 8h2M3.8 3.8l1.4 1.4M10.8 10.8l1.4 1.4M3.8 12.2l1.4-1.4M10.8 5.2l1.4-1.4" />
+            </svg>
+          ),
+        },
+      ],
+    },
   ]
 
   const canSee = (item: NavItem) =>

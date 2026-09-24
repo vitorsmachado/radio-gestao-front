@@ -25,6 +25,9 @@ import OrcamentoDetalhe from './pages/orcamentos/OrcamentoDetalhe'
 // Notificações
 import NotificacoesLista from './pages/notificacoes/NotificacoesLista'
 
+// Configurações
+import Configuracoes from './pages/configuracoes/Configuracoes'
+
 // Estoque
 import PecasLista from './pages/estoque/PecasLista'
 import CatalogoLista from './pages/estoque/CatalogoLista'
@@ -66,6 +69,12 @@ const router = createBrowserRouter([
                 children: [
                   { path: '/manutencao', element: <FilaManutencao /> },
                   { path: '/manutencao/:osId', element: <AvaliacaoOS /> },
+                ],
+              },
+              {
+                element: <RotaProtegida roles={['ADMIN']} />,
+                children: [
+                  { path: '/configuracoes', element: <Configuracoes /> },
                 ],
               },
               { path: '/', element: <Navigate to="/clientes" replace /> },
