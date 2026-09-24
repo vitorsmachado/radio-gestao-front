@@ -86,7 +86,7 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
   const [erro, setErro] = useState<string | null>(null)
 
   const precisaConserto = resultado === 'AJUSTE' || resultado === 'ORCAMENTO'
-  const mostrarSeletorPeca = precisaConserto && !garantiaPecaId
+  const mostrarSeletorPeca = precisaConserto && !garantiaPecaId && item.tipoItem !== 'ACESSORIO'
 
   useEffect(() => {
     if (!precisaConserto || !item.itemEstoqueId) {

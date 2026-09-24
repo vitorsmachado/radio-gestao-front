@@ -350,6 +350,9 @@ function ItemOrcamentoCard({
   const [adicionandoMaoDeObra, setAdicionandoMaoDeObra] = useState(false)
   const [qtdMaoDeObra, setQtdMaoDeObra] = useState('1')
   const [valorMaoDeObra, setValorMaoDeObra] = useState('')
+  const [adicionandoAcessorio, setAdicionandoAcessorio] = useState(false)
+  const [qtdAcessorio, setQtdAcessorio] = useState('1')
+  const [valorAcessorio, setValorAcessorio] = useState('')
 
   const adicionarPeca = async () => {
     if (!pecaPendente) return
@@ -396,6 +399,32 @@ function ItemOrcamentoCard({
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
       setErro(msg ?? 'Não foi possível adicionar a mão de obra.')
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  const abrirAcessorio = () => {
+    setQtdAcessorio('1')
+    setValorAcessorio(item.catalogoValorReferencia ? String(item.catalogoValorReferencia) : '')
+    setAdicionandoAcessorio(true)
+  }
+
+  const adicionarAcessorio = async () => {
+    setSalvando(true)
+    setErro(null)
+    try {
+      await itensEntradaApi.adicionarItemConserto(item.id, {
+        tipo: 'PECA',
+        descricao: `${item.descricao} (novo)`,
+        quantidade: Number(qtdAcessorio) || 1,
+        valorUnitario: Number(valorAcessorio) || 0,
+      })
+      setAdicionandoAcessorio(false)
+      onMudou()
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setErro(msg ?? 'Não foi possível adicionar o acessório.')
     } finally {
       setSalvando(false)
     }
@@ -544,28 +573,53 @@ function ItemOrcamentoCard({
 
       {podeEditarPecas && (
         <div style={{ marginTop: 10 }}>
-          <PecaCompativelSelector catalogoModeloId={item.catalogoModeloId} onSelecionar={setPecaPendente} />
-
-          {pecaPendente && (
-            <div className="section-card" style={{ marginTop: 8, background: 'var(--bg3)' }}>
-              <div style={{ fontSize: 13, marginBottom: 8 }}>{pecaPendente.descricao}</div>
-              <div className="form-row form-row-2" style={{ marginBottom: 8 }}>
-                <div className="form-field">
-                  <label className="form-label">Quantidade</label>
-                  <input type="number" min={1} className="form-input" value={qtdPendente} onChange={e => setQtdPendente(e.target.value)} />
-                </div>
-                <div className="form-field">
-                  <label className="form-label">Valor unitário (R$)</label>
-                  <input type="number" min={0} step="0.01" className="form-input" value={valorPendente} onChange={e => setValorPendente(e.target.value)} />
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                <button type="button" className="btn btn-sm btn-ghost" onClick={() => setPecaPendente(null)}>Cancelar</button>
-                <button type="button" className="btn btn-sm btn-amber" disabled={salvando} onClick={adicionarPeca}>
-                  {salvando ? '// salvando...' : 'Adicionar'}
-                </button>
-              </div>
+          {item.tipoItem === 'ACESSORIO' ? (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <button type="button" className={`btn btn-sm${adicionandoAcessorio ? ' btn-amber' : ''}`} onClick={() => (adicionandoAcessorio ? setAdicionandoAcessorio(false) : abrirAcessorio())}>
+                + Acessório novo
+              </button>
+              {adicionandoAcessorio && (
+                <>
+                  <div className="form-field" style={{ width: 90 }}>
+                    <label className="form-label">Qtd.</label>
+                    <input type="number" min={1} className="form-input" value={qtdAcessorio} onChange={e => setQtdAcessorio(e.target.value)} />
+                  </div>
+                  <div className="form-field" style={{ width: 140 }}>
+                    <label className="form-label">Valor (R$)</label>
+                    <input type="number" min={0} step="0.01" className="form-input" value={valorAcessorio} onChange={e => setValorAcessorio(e.target.value)} />
+                  </div>
+                  <button type="button" className="btn btn-sm btn-amber" disabled={salvando} onClick={adicionarAcessorio}>
+                    {salvando ? '// salvando...' : 'OK'}
+                  </button>
+                </>
+              )}
             </div>
+          ) : (
+            <>
+              <PecaCompativelSelector catalogoModeloId={item.catalogoModeloId} onSelecionar={setPecaPendente} />
+
+              {pecaPendente && (
+                <div className="section-card" style={{ marginTop: 8, background: 'var(--bg3)' }}>
+                  <div style={{ fontSize: 13, marginBottom: 8 }}>{pecaPendente.descricao}</div>
+                  <div className="form-row form-row-2" style={{ marginBottom: 8 }}>
+                    <div className="form-field">
+                      <label className="form-label">Quantidade</label>
+                      <input type="number" min={1} className="form-input" value={qtdPendente} onChange={e => setQtdPendente(e.target.value)} />
+                    </div>
+                    <div className="form-field">
+                      <label className="form-label">Valor unitário (R$)</label>
+                      <input type="number" min={0} step="0.01" className="form-input" value={valorPendente} onChange={e => setValorPendente(e.target.value)} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    <button type="button" className="btn btn-sm btn-ghost" onClick={() => setPecaPendente(null)}>Cancelar</button>
+                    <button type="button" className="btn btn-sm btn-amber" disabled={salvando} onClick={adicionarPeca}>
+                      {salvando ? '// salvando...' : 'Adicionar'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginTop: 8, flexWrap: 'wrap' }}>
