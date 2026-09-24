@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
+import { clientesApi } from '../../api/clientes'
 import { osApi } from '../../api/os'
 import { itensEntradaApi } from '../../api/itensEntrada'
+import ClienteAutocomplete from '../../components/ClienteAutocomplete'
 import Modal from '../../components/Modal'
+import { fecharComConfirmacao } from '../../utils/fecharComConfirmacao'
+import ClienteRapidoModal from '../clientes/ClienteRapidoModal'
 import ItemEntradaCard from './ItemEntradaCard'
 import ItemEntradaForm from './ItemEntradaForm'
-import type { ItemEntradaCreateRequest, ItemEntradaDTO, OrdemServicoDTO, StatusOS } from '../../types/os'
+import type { ClienteDTO } from '../../types/cliente'
+import type { AtualizarOrdemServicoRequest, ItemEntradaCreateRequest, ItemEntradaDTO, OrdemServicoDTO, StatusOS } from '../../types/os'
 
 const STATUS_OS_LABEL: Record<StatusOS, string> = {
   ABERTA: 'Aberta',
@@ -34,6 +39,7 @@ export default function OsDetalhe() {
   const [modalItem, setModalItem] = useState(false)
   const [modalEntrega, setModalEntrega] = useState(false)
   const [modalCancelar, setModalCancelar] = useState(false)
+  const [modalEditar, setModalEditar] = useState(false)
   const [processando, setProcessando] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
 
@@ -94,6 +100,7 @@ export default function OsDetalhe() {
   if (!os) return null
 
   const encerrada = os.status === 'CONCLUIDA' || os.status === 'CANCELADA'
+  const podeEditar = os.status !== 'CONCLUIDA'
 
   return (
     <div className="fade-in">
@@ -109,6 +116,7 @@ export default function OsDetalhe() {
           <div className="page-sub">
             // aberta em {new Date(os.dataAbertura).toLocaleString('pt-BR')}
             {os.solicitante ? ` · solicitante: ${os.solicitante}` : ''}
+            {os.numeroRelatorio ? ` · relatório: ${os.numeroRelatorio}` : ''}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -122,6 +130,9 @@ export default function OsDetalhe() {
       {erro && <div className="error-banner">{erro}</div>}
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+        {podeEditar && (
+          <button className="btn btn-sm btn-ghost" onClick={() => setModalEditar(true)}>Editar</button>
+        )}
         {os.status === 'ABERTA' && (
           <button className="btn btn-sm btn-amber" onClick={iniciarAndamento}>Iniciar andamento</button>
         )}
@@ -174,7 +185,142 @@ export default function OsDetalhe() {
           }}
         />
       )}
+
+      {modalEditar && (
+        <EditarOSModal
+          os={os}
+          onClose={() => setModalEditar(false)}
+          onSalvo={atualizado => { setOs(atualizado); setModalEditar(false) }}
+        />
+      )}
     </div>
+  )
+}
+
+function paraDatetimeLocal(iso: string): string {
+  return iso.slice(0, 16)
+}
+
+function EditarOSModal({
+  os, onClose, onSalvo,
+}: {
+  os: OrdemServicoDTO
+  onClose: () => void
+  onSalvo: (os: OrdemServicoDTO) => void
+}) {
+  const [clienteId, setClienteId] = useState(os.clienteId)
+  const [cliente, setCliente] = useState<ClienteDTO | null>(null)
+  const [carregandoCliente, setCarregandoCliente] = useState(true)
+  const [mostrarCadastroRapido, setMostrarCadastroRapido] = useState(false)
+  const [buscaParaCadastro, setBuscaParaCadastro] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  const {
+    register, handleSubmit, formState: { isDirty },
+  } = useForm<{ solicitante: string; dataAbertura: string; observacoes: string; numeroRelatorio: string }>({
+    defaultValues: {
+      solicitante: os.solicitante ?? '',
+      dataAbertura: paraDatetimeLocal(os.dataAbertura),
+      observacoes: os.observacoes ?? '',
+      numeroRelatorio: os.numeroRelatorio ?? '',
+    },
+  })
+
+  useEffect(() => {
+    setCarregandoCliente(true)
+    clientesApi
+      .buscarCompleto(clienteId)
+      .then(setCliente)
+      .catch(() => setCliente(null))
+      .finally(() => setCarregandoCliente(false))
+  }, [clienteId])
+
+  const dirty = isDirty || clienteId !== os.clienteId
+  const fechar = () => fecharComConfirmacao(dirty, onClose)
+
+  const onSubmit = handleSubmit(async d => {
+    setSalvando(true)
+    setErro(null)
+    try {
+      const payload: AtualizarOrdemServicoRequest = {
+        clienteId,
+        postoId: os.postoId,
+        tecnicoId: os.tecnicoId,
+        solicitante: d.solicitante.trim() || undefined,
+        dataAbertura: `${d.dataAbertura}:00`,
+        observacoes: d.observacoes.trim() || undefined,
+        numeroRelatorio: d.numeroRelatorio.trim() || undefined,
+      }
+      const atualizado = await osApi.atualizar(os.id, payload)
+      onSalvo(atualizado)
+    } catch (e: unknown) {
+      const msg =
+        (e as { response?: { data?: { message?: string } } })
+          ?.response?.data?.message ?? 'Não foi possível salvar a OS.'
+      setErro(msg)
+      setSalvando(false)
+    }
+  })
+
+  return (
+    <Modal title="Editar OS" onClose={fechar}>
+      {erro && <div className="error-banner">{erro}</div>}
+
+      <form onSubmit={onSubmit}>
+        <div className="form-field" style={{ marginBottom: 12 }}>
+          <label className="form-label">Cliente</label>
+          {carregandoCliente && <div className="form-hint">// carregando cliente...</div>}
+          {!carregandoCliente && cliente && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 13 }}>{cliente.nomeRazaoSocial}</div>
+              <span className="crumb" style={{ cursor: 'pointer' }} onClick={() => setCliente(null)}>trocar</span>
+            </div>
+          )}
+          {!carregandoCliente && !cliente && (
+            <ClienteAutocomplete
+              onSelecionar={c => { setClienteId(c.id); setCliente(c) }}
+              onCadastrarNovo={busca => { setBuscaParaCadastro(busca); setMostrarCadastroRapido(true) }}
+            />
+          )}
+        </div>
+
+        <div className="form-field" style={{ marginBottom: 12 }}>
+          <label className="form-label">Solicitante</label>
+          <input className="form-input" {...register('solicitante')} />
+        </div>
+
+        <div className="form-field" style={{ marginBottom: 12 }}>
+          <label className="form-label">Data de abertura</label>
+          <input type="datetime-local" className="form-input" {...register('dataAbertura', { required: true })} />
+        </div>
+
+        <div className="form-field" style={{ marginBottom: 12 }}>
+          <label className="form-label">Número do relatório</label>
+          <input className="form-input" placeholder="Relatório manual da retirada dos itens" {...register('numeroRelatorio')} />
+        </div>
+
+        <div className="form-field" style={{ marginBottom: 12 }}>
+          <label className="form-label">Observações</label>
+          <textarea className="form-input" rows={3} {...register('observacoes')} />
+        </div>
+
+        <div className="modal-footer">
+          <button type="button" className="btn btn-ghost" onClick={fechar}>Cancelar</button>
+          <button type="submit" className="btn btn-amber" disabled={salvando}>
+            {salvando ? '// salvando...' : 'Salvar'}
+          </button>
+        </div>
+      </form>
+
+      {mostrarCadastroRapido && (
+        <ClienteRapidoModal
+          buscaInicial={buscaParaCadastro}
+          onClose={() => setMostrarCadastroRapido(false)}
+          onCriado={c => { setClienteId(c.id); setCliente(c); setMostrarCadastroRapido(false) }}
+        />
+      )}
+    </Modal>
   )
 }
 

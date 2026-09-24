@@ -1,5 +1,6 @@
 import api from './axios'
 import type {
+  AtualizarOrdemServicoRequest,
   FilaManutencaoOSDTO,
   GarantiaPecaDTO,
   HistoricoOSItemDTO,
@@ -24,6 +25,9 @@ export const osApi = {
 
   buscarPorId: (id: string) =>
     api.get<OrdemServicoDTO>(`/v1/ordens-servico/${id}`).then(r => r.data),
+
+  atualizar: (id: string, data: AtualizarOrdemServicoRequest) =>
+    api.put<OrdemServicoDTO>(`/v1/ordens-servico/${id}`, data).then(r => r.data),
 
   buscarPorNumero: (numero: string) =>
     api.get<OrdemServicoDTO>(`/v1/ordens-servico/numero/${numero}`).then(r => r.data),

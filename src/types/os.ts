@@ -67,6 +67,7 @@ export interface OrdemServicoDTO {
   dataConclusao?: string
   dataAtualizacao?: string
   observacoes?: string
+  numeroRelatorio?: string
 }
 
 export interface OrdemServicoResumoDTO {
@@ -89,6 +90,17 @@ export interface OrdemServicoCreateRequest {
   /** Opcional — se ausente, o backend usa o momento da criação. */
   dataAbertura?: string
   observacoes?: string
+}
+
+/** Edição livre da OS — permitida em qualquer status, menos CONCLUIDA. */
+export interface AtualizarOrdemServicoRequest {
+  clienteId: string
+  postoId?: string
+  tecnicoId?: string
+  solicitante?: string
+  dataAbertura: string
+  observacoes?: string
+  numeroRelatorio?: string
 }
 
 export interface ItemConsertoDTO {
