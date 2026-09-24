@@ -5,20 +5,18 @@ import { clientesApi } from '../../api/clientes'
 import { itensEntradaApi } from '../../api/itensEntrada'
 import { osApi } from '../../api/os'
 import ClienteAutocomplete from '../../components/ClienteAutocomplete'
-import CatalogoSelector from '../../components/CatalogoSelector'
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges'
 import type { ClienteDTO } from '../../types/cliente'
-import type { CatalogoModeloDTO } from '../../types/catalogo'
 import {
   FAIXA_EQUIPAMENTO_LABEL,
   TIPO_OS_LABEL,
-  type FaixaEquipamento,
-  type ItemEntradaCreateRequest,
   type OrdemServicoDTO,
   type TipoItem,
   type TipoOS,
 } from '../../types/os'
 import ClienteRapidoModal from '../clientes/ClienteRapidoModal'
+import ItemRascunhoFields from './ItemRascunhoFields'
+import { formatarValorReferencia, gerarTempId, itemRascunhoVazio, paraCreateRequest, type ItemRascunho } from './itemRascunho'
 
 interface FormValues {
   solicitante: string
@@ -28,22 +26,6 @@ interface FormValues {
 }
 
 type TipoContato = 'COMERCIAL' | 'TECNICO' | 'FINANCEIRO' | 'GERENCIAL'
-
-interface ItemRascunho {
-  tempId: string
-  tipoItem: TipoItem
-  descricao: string
-  marca: string
-  modelo: string
-  faixa: FaixaEquipamento | ''
-  numeroSerie: string
-  patrimonio: string
-  codigoCliente: string
-  defeitoRelatado: string
-  rastreamento: 'NS' | 'QUANTIDADE'
-  quantidade: number
-  catalogo: CatalogoModeloDTO | null
-}
 
 const TIPOS: TipoOS[] = ['ORCAMENTO_MANUTENCAO']
 
@@ -69,50 +51,6 @@ function formatarDocumento(doc?: string): string {
   if (doc.length === 11) return doc.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
   if (doc.length === 14) return doc.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
   return doc
-}
-
-function formatarValor(v: number): string {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-function gerarTempId(): string {
-  return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
-
-function itemRascunhoVazio(): ItemRascunho {
-  return {
-    tempId: gerarTempId(),
-    tipoItem: 'EQUIPAMENTO',
-    descricao: '',
-    marca: '',
-    modelo: '',
-    faixa: '',
-    numeroSerie: '',
-    patrimonio: '',
-    codigoCliente: '',
-    defeitoRelatado: '',
-    rastreamento: 'NS',
-    quantidade: 1,
-    catalogo: null,
-  }
-}
-
-function paraCreateRequest(osId: string, item: ItemRascunho): ItemEntradaCreateRequest {
-  const porQuantidade = item.tipoItem === 'ACESSORIO' && item.rastreamento === 'QUANTIDADE'
-  return {
-    osId,
-    tipoItem: item.tipoItem,
-    descricao: item.descricao.trim(),
-    marca: item.marca.trim() || undefined,
-    modelo: item.modelo.trim() || undefined,
-    faixa: item.tipoItem === 'EQUIPAMENTO' && item.faixa ? item.faixa : undefined,
-    numeroSerie: porQuantidade ? undefined : (item.numeroSerie.trim() || undefined),
-    patrimonio: porQuantidade ? undefined : (item.patrimonio.trim() || undefined),
-    codigoCliente: item.codigoCliente.trim() || undefined,
-    quantidade: porQuantidade ? (Number(item.quantidade) || 1) : 1,
-    defeitoRelatado: item.defeitoRelatado.trim() || undefined,
-    catalogoModeloId: item.catalogo?.id,
-  }
 }
 
 export default function OsForm() {
@@ -495,17 +433,7 @@ function ItemRascunhoCard({
   onRemover: () => void
   onDuplicar: () => void
 }) {
-  const porQuantidade = item.tipoItem === 'ACESSORIO' && item.rastreamento === 'QUANTIDADE'
-  const usaCatalogo = item.tipoItem === 'EQUIPAMENTO' || item.tipoItem === 'ACESSORIO'
   const descricaoInvalida = mostrarErro && !item.descricao.trim()
-
-  const selecionarCatalogo = (c: CatalogoModeloDTO | null) => {
-    if (!c) { onAtualizar({ catalogo: null }); return }
-    const patch: Partial<ItemRascunho> = { catalogo: c, marca: c.marca, modelo: c.modelo }
-    if (c.descricao) patch.descricao = c.descricao
-    if (item.tipoItem === 'ACESSORIO') patch.rastreamento = c.controlePorSerie ? 'NS' : 'QUANTIDADE'
-    onAtualizar(patch)
-  }
 
   const limparItem = () => onAtualizar({
     tipoItem: 'EQUIPAMENTO',
@@ -536,7 +464,7 @@ function ItemRascunhoCard({
             {item.faixa ? ` · ${FAIXA_EQUIPAMENTO_LABEL[item.faixa]}` : ''}
             {item.numeroSerie ? ` · S/N ${item.numeroSerie}` : ''}
             {item.quantidade > 1 ? ` · Qtd. ${item.quantidade}` : ''}
-            {item.catalogo?.valorReferencia != null ? ` · ref. ${formatarValor(item.catalogo.valorReferencia)}` : ''}
+            {item.catalogo?.valorReferencia != null ? ` · ref. ${formatarValorReferencia(item.catalogo.valorReferencia)}` : ''}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -564,139 +492,7 @@ function ItemRascunhoCard({
 
       {expandido && (
         <div style={{ padding: 14, borderTop: '0.5px solid var(--border)' }}>
-          <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
-            <div className="form-field">
-              <label className="form-label">Tipo</label>
-              <select
-                className="form-select" value={item.tipoItem}
-                onChange={e => onAtualizar({ tipoItem: e.target.value as TipoItem, catalogo: null })}
-              >
-                <option value="EQUIPAMENTO">Equipamento</option>
-                <option value="ACESSORIO">Acessório</option>
-              </select>
-            </div>
-            {usaCatalogo && (
-              <div className="form-field">
-                <label className="form-label">Modelo no catálogo</label>
-                <CatalogoSelector tipoItem={item.tipoItem} selecionado={item.catalogo} onSelecionar={selecionarCatalogo} />
-              </div>
-            )}
-          </div>
-
-          <div className="form-field" style={{ marginBottom: 12 }}>
-            <label className="form-label">Descrição</label>
-            <input
-              className={`form-input${descricaoInvalida ? ' error' : ''}`} placeholder="Rádio Motorola EP450"
-              value={item.descricao} onChange={e => onAtualizar({ descricao: e.target.value })}
-            />
-            {descricaoInvalida && <span className="form-error">Descrição obrigatória</span>}
-          </div>
-
-          <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
-            <div className="form-field">
-              <label className="form-label">Marca</label>
-              <input className="form-input" value={item.marca} onChange={e => onAtualizar({ marca: e.target.value })} />
-            </div>
-            <div className="form-field">
-              <label className="form-label">Modelo</label>
-              <input className="form-input" value={item.modelo} onChange={e => onAtualizar({ modelo: e.target.value })} />
-            </div>
-          </div>
-
-          {item.tipoItem === 'EQUIPAMENTO' && (
-            <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
-              <div className="form-field">
-                <label className="form-label">Faixa</label>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {Object.entries(FAIXA_EQUIPAMENTO_LABEL).map(([valor, label]) => (
-                    <button
-                      key={valor} type="button"
-                      className={`btn btn-sm${item.faixa === valor ? ' btn-amber' : ''}`}
-                      onClick={() => onAtualizar({ faixa: valor as FaixaEquipamento })}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="form-field">
-                <label className="form-label">Número de série</label>
-                <input className="form-input" value={item.numeroSerie} onChange={e => onAtualizar({ numeroSerie: e.target.value })} />
-              </div>
-            </div>
-          )}
-
-          {item.tipoItem === 'ACESSORIO' && (
-            <div className="form-field" style={{ marginBottom: 12 }}>
-              <label className="form-label">Rastreamento</label>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  type="button"
-                  className={`btn btn-sm${item.rastreamento === 'NS' ? ' btn-amber' : ''}`}
-                  onClick={() => onAtualizar({ rastreamento: 'NS' })}
-                >
-                  N/S
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-sm${item.rastreamento === 'QUANTIDADE' ? ' btn-amber' : ''}`}
-                  onClick={() => onAtualizar({ rastreamento: 'QUANTIDADE' })}
-                >
-                  Qnt.
-                </button>
-              </div>
-              <div className="form-hint" style={{ marginTop: 4 }}>
-                Use "Qnt." para acessórios sem identificação individual — ex: antenas genéricas.
-              </div>
-            </div>
-          )}
-
-          {item.tipoItem === 'ACESSORIO' && (
-            <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
-              <div className="form-field">
-                {porQuantidade ? (
-                  <>
-                    <label className="form-label">Quantidade</label>
-                    <input
-                      type="number" min={1} className="form-input"
-                      value={item.quantidade}
-                      onChange={e => onAtualizar({ quantidade: Number(e.target.value) || 1 })}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <label className="form-label">Número de série</label>
-                    <input className="form-input" value={item.numeroSerie} onChange={e => onAtualizar({ numeroSerie: e.target.value })} />
-                  </>
-                )}
-              </div>
-              <div className="form-field">
-                <label className="form-label">Código do cliente</label>
-                <input
-                  className="form-input" placeholder="Identificação própria do cliente pro item"
-                  value={item.codigoCliente} onChange={e => onAtualizar({ codigoCliente: e.target.value })}
-                />
-              </div>
-            </div>
-          )}
-
-          {item.tipoItem === 'EQUIPAMENTO' && (
-            <div className="form-field" style={{ marginBottom: 12 }}>
-              <label className="form-label">Código do cliente</label>
-              <input
-                className="form-input" placeholder="Identificação própria do cliente pro item"
-                value={item.codigoCliente} onChange={e => onAtualizar({ codigoCliente: e.target.value })}
-              />
-            </div>
-          )}
-
-          <div className="form-field">
-            <label className="form-label">Defeito relatado pelo cliente</label>
-            <textarea
-              className="form-input" rows={3}
-              value={item.defeitoRelatado} onChange={e => onAtualizar({ defeitoRelatado: e.target.value })}
-            />
-          </div>
+          <ItemRascunhoFields item={item} descricaoInvalida={descricaoInvalida} onAtualizar={onAtualizar} />
         </div>
       )}
     </div>
