@@ -23,12 +23,13 @@ interface Props {
 }
 
 export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }: Props) {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
-    defaultValues: { tipoItem: 'EQUIPAMENTO', rastreamento: 'NS', quantidade: 1 },
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
+    defaultValues: { tipoItem: 'EQUIPAMENTO', rastreamento: 'NS', quantidade: 1, faixa: '' },
   })
 
   const tipoItem = watch('tipoItem')
   const rastreamento = watch('rastreamento')
+  const faixa = watch('faixa')
   const porQuantidade = tipoItem === 'ACESSORIO' && rastreamento === 'QUANTIDADE'
 
   const onSubmit = handleSubmit(d =>
@@ -79,14 +80,19 @@ export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }
         </div>
 
         {tipoItem === 'EQUIPAMENTO' && (
-          <div className="form-field" style={{ marginBottom: 12, maxWidth: 200 }}>
+          <div className="form-field" style={{ marginBottom: 12 }}>
             <label className="form-label">Faixa</label>
-            <select className="form-select" {...register('faixa')}>
-              <option value="">Selecione</option>
+            <div style={{ display: 'flex', gap: 6 }}>
               {Object.entries(FAIXA_EQUIPAMENTO_LABEL).map(([valor, label]) => (
-                <option key={valor} value={valor}>{label}</option>
+                <button
+                  key={valor} type="button"
+                  className={`btn btn-sm${faixa === valor ? ' btn-amber' : ''}`}
+                  onClick={() => setValue('faixa', valor as FaixaEquipamento)}
+                >
+                  {label}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
         )}
 

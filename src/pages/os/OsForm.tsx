@@ -604,17 +604,19 @@ function ItemRascunhoCard({
           </div>
 
           {item.tipoItem === 'EQUIPAMENTO' && (
-            <div className="form-field" style={{ marginBottom: 12, maxWidth: 200 }}>
+            <div className="form-field" style={{ marginBottom: 12 }}>
               <label className="form-label">Faixa</label>
-              <select
-                className="form-select" value={item.faixa}
-                onChange={e => onAtualizar({ faixa: e.target.value as FaixaEquipamento | '' })}
-              >
-                <option value="">Selecione</option>
+              <div style={{ display: 'flex', gap: 6 }}>
                 {Object.entries(FAIXA_EQUIPAMENTO_LABEL).map(([valor, label]) => (
-                  <option key={valor} value={valor}>{label}</option>
+                  <button
+                    key={valor} type="button"
+                    className={`btn btn-sm${item.faixa === valor ? ' btn-amber' : ''}`}
+                    onClick={() => onAtualizar({ faixa: valor as FaixaEquipamento })}
+                  >
+                    {label}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
           )}
 
