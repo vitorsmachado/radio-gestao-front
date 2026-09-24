@@ -13,6 +13,9 @@ export const itensEntradaApi = {
   listarPorOS: (osId: string) =>
     api.get<ItemEntradaDTO[]>('/v1/itens-entrada', { params: { osId } }).then(r => r.data),
 
+  remover: (id: string) =>
+    api.delete<void>(`/v1/itens-entrada/${id}`).then(() => undefined),
+
   avaliar: (id: string, data: AvaliarItemRequest) =>
     api.patch<ItemEntradaDTO>(`/v1/itens-entrada/${id}/avaliar`, data).then(r => r.data),
 

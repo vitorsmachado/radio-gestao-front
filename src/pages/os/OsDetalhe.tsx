@@ -70,6 +70,10 @@ export default function OsDetalhe() {
     setItens(prev => prev.map(i => (i.id === item.id ? item : i)))
   }
 
+  const removerItem = (itemId: string) => {
+    setItens(prev => prev.filter(i => i.id !== itemId))
+  }
+
   const novoItem = async (dados: ItemEntradaCreateRequest) => {
     setProcessando(true)
     try {
@@ -188,7 +192,7 @@ export default function OsDetalhe() {
       {itens.length === 0 && <div className="empty">Nenhum item registrado ainda.</div>}
 
       {itens.map(item => (
-        <ItemEntradaCard key={item.id} item={item} onAtualizado={atualizarItem} />
+        <ItemEntradaCard key={item.id} item={item} onAtualizado={atualizarItem} onRemovido={removerItem} />
       ))}
 
       {modalItem && (
