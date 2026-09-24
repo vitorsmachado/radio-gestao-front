@@ -169,7 +169,7 @@ export default function OsDetalhe() {
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
         {podeEditar && (
-          <button className="btn btn-sm btn-ghost" onClick={() => setModalEditar(true)}>Editar</button>
+          <button className="btn btn-sm" onClick={() => setModalEditar(true)}>Editar</button>
         )}
         {os.status === 'ABERTA' && (
           <button className="btn btn-sm btn-amber" onClick={iniciarAndamento}>Iniciar andamento</button>
