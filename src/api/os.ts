@@ -62,6 +62,9 @@ export const itensEntradaAvaliacaoApi = {
   salvarAvaliacaoTecnica: (id: string, data: SalvarAvaliacaoTecnicaRequest) =>
     api.patch<ItemEntradaDTO>(`/v1/itens-entrada/${id}/avaliacao-tecnica`, data).then(r => r.data),
 
+  atualizarAvaliacaoCompleta: (id: string, data: SalvarAvaliacaoTecnicaRequest) =>
+    api.put<ItemEntradaDTO>(`/v1/itens-entrada/${id}/avaliacao-tecnica`, data).then(r => r.data),
+
   confirmarAguardandoPeca: (id: string) =>
     api.patch<ItemEntradaDTO>(`/v1/itens-entrada/${id}/confirmar-aguardando-peca`).then(r => r.data),
 

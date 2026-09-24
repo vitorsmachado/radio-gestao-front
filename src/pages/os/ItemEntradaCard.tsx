@@ -4,6 +4,7 @@ import { itensEntradaApi } from '../../api/itensEntrada'
 import { itensEntradaAvaliacaoApi } from '../../api/os'
 import Modal from '../../components/Modal'
 import PecaCompativelSelector from '../../components/PecaCompativelSelector'
+import AvaliacaoTecnicaFields, { valoresIniciais, type AvaliacaoTecnicaValores } from './AvaliacaoTecnicaFields'
 import {
   FAIXA_EQUIPAMENTO_LABEL,
   type AvaliarItemRequest,
@@ -236,19 +237,20 @@ export default function ItemEntradaCard({ item, onAtualizado }: Props) {
         )}
       </div>
 
-      {(acao === 'avaliar' || acao === 'atualizar-avaliacao') && (
+      {acao === 'avaliar' && (
         <AvaliarModal
           inicial={{ avaliacaoTecnica: item.avaliacaoTecnica ?? '', semDefeito: item.semDefeito }}
-          novo={acao === 'avaliar'}
           onClose={() => setAcao(null)}
-          onSalvar={dados =>
-            executar(() =>
-              acao === 'avaliar'
-                ? itensEntradaApi.avaliar(item.id, dados)
-                : itensEntradaApi.atualizarAvaliacao(item.id, dados)
-            )
-          }
+          onSalvar={dados => executar(() => itensEntradaApi.avaliar(item.id, dados))}
           processando={processando}
+        />
+      )}
+
+      {acao === 'atualizar-avaliacao' && (
+        <AtualizarAvaliacaoModal
+          item={item}
+          onClose={() => setAcao(null)}
+          onAtualizado={onAtualizado}
         />
       )}
 
@@ -278,10 +280,9 @@ export default function ItemEntradaCard({ item, onAtualizado }: Props) {
 }
 
 function AvaliarModal({
-  inicial, novo, onClose, onSalvar, processando,
+  inicial, onClose, onSalvar, processando,
 }: {
   inicial: AvaliarItemRequest
-  novo: boolean
   onClose: () => void
   onSalvar: (dados: AvaliarItemRequest) => void
   processando: boolean
@@ -289,7 +290,7 @@ function AvaliarModal({
   const { register, handleSubmit } = useForm<AvaliarItemRequest>({ defaultValues: inicial })
 
   return (
-    <Modal title={novo ? 'Avaliar item' : 'Atualizar avaliação'} onClose={onClose}>
+    <Modal title="Avaliar item" onClose={onClose}>
       <form onSubmit={handleSubmit(onSalvar)}>
         <div className="form-field" style={{ marginBottom: 12 }}>
           <label className="form-label">Avaliação técnica</label>
@@ -451,6 +452,58 @@ function ItemConsertoModal({
         <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
         <button type="button" className="btn btn-amber" disabled={processando || !podeSubmeter} onClick={submit}>
           Adicionar
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+function AtualizarAvaliacaoModal({
+  item, onClose, onAtualizado,
+}: {
+  item: ItemEntradaDTO
+  onClose: () => void
+  onAtualizado: (item: ItemEntradaDTO) => void
+}) {
+  const [valores, setValores] = useState<AvaliacaoTecnicaValores>(() => valoresIniciais(item))
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  const atualizarValores = (patch: Partial<AvaliacaoTecnicaValores>) => setValores(prev => ({ ...prev, ...patch }))
+
+  const salvar = async () => {
+    setSalvando(true)
+    setErro(null)
+    try {
+      const atualizado = await itensEntradaAvaliacaoApi.atualizarAvaliacaoCompleta(item.id, {
+        resultado: valores.resultado,
+        detalheAjuste: valores.resultado === 'AJUSTE' ? (valores.detalheAjuste.trim() || undefined) : undefined,
+        defeitoEncontrado: valores.defeitoEncontrado.trim() || undefined,
+        causaDefeito: valores.causaDefeito.trim() || undefined,
+        solucaoRecomendada: valores.solucaoRecomendada.trim() || undefined,
+        observacoesTecnicas: valores.observacoesTecnicas.trim() || undefined,
+        garantiaPecaId: valores.garantiaPecaId || undefined,
+      })
+      onAtualizado(atualizado)
+      onClose()
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setErro(msg ?? 'Não foi possível salvar a avaliação.')
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <Modal title="Atualizar avaliação" onClose={onClose}>
+      {erro && <div className="error-banner">{erro}</div>}
+
+      <AvaliacaoTecnicaFields item={item} valores={valores} onAtualizar={atualizarValores} onAtualizadoItem={onAtualizado} />
+
+      <div className="modal-footer">
+        <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+        <button type="button" className="btn btn-amber" disabled={salvando} onClick={salvar}>
+          {salvando ? '// salvando...' : 'Salvar'}
         </button>
       </div>
     </Modal>
