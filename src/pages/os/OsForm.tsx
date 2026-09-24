@@ -204,7 +204,7 @@ export default function OsForm() {
 
     try {
       for (const item of itensRascunho) {
-        await itensEntradaApi.criar(paraCreateRequest(novaOS.id, item))
+        await itensEntradaApi.criar(await paraCreateRequest(novaOS.id, clienteId, item))
       }
       navigate(`/os/${novaOS.id}`)
     } catch (e: unknown) {

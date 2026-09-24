@@ -210,6 +210,7 @@ export default function OsDetalhe() {
       {modalItem && (
         <ItemEntradaForm
           osId={os.id}
+          clienteId={os.clienteId}
           onClose={() => setModalItem(false)}
           onSalvar={novoItem}
           processando={processando}

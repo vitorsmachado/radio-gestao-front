@@ -1,3 +1,4 @@
+import { equipamentosApi } from '../../api/equipamentos'
 import type { CatalogoModeloDTO } from '../../types/catalogo'
 import type { FaixaEquipamento, ItemEntradaCreateRequest, TipoItem } from '../../types/os'
 
@@ -39,10 +40,33 @@ export function itemRascunhoVazio(): ItemRascunho {
   }
 }
 
-export function paraCreateRequest(osId: string, item: ItemRascunho): ItemEntradaCreateRequest {
+/**
+ * Se o item for um equipamento com N/S informado, resolve (busca ou
+ * cadastra) o registro rastreável desse equipamento no estoque, ligado ao
+ * cliente da OS — é o que permite reconhecer o mesmo equipamento numa
+ * visita futura, pra garantia. Lança erro se o N/S já pertencer a outro
+ * cliente (confira o número de série antes de continuar).
+ */
+async function resolverItemEstoqueId(clienteId: string, item: ItemRascunho): Promise<string | undefined> {
+  if (item.tipoItem !== 'EQUIPAMENTO' || !item.numeroSerie.trim() || !item.faixa) return undefined
+  const equipamento = await equipamentosApi.resolverPorNS({
+    numeroSerie: item.numeroSerie.trim(),
+    clienteId,
+    faixa: item.faixa,
+    descricao: item.descricao.trim() || undefined,
+    catalogoModeloId: item.catalogo?.id,
+    marca: item.marca.trim() || undefined,
+    modelo: item.modelo.trim() || undefined,
+  })
+  return equipamento.id
+}
+
+export async function paraCreateRequest(osId: string, clienteId: string, item: ItemRascunho): Promise<ItemEntradaCreateRequest> {
   const porQuantidade = item.tipoItem === 'ACESSORIO' && item.rastreamento === 'QUANTIDADE'
+  const itemEstoqueId = await resolverItemEstoqueId(clienteId, item)
   return {
     osId,
+    itemEstoqueId,
     tipoItem: item.tipoItem,
     descricao: item.descricao.trim(),
     marca: item.marca.trim() || undefined,
