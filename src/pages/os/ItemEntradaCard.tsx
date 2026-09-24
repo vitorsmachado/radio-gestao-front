@@ -3,14 +3,17 @@ import { useForm } from 'react-hook-form'
 import { itensEntradaApi } from '../../api/itensEntrada'
 import { itensEntradaAvaliacaoApi } from '../../api/os'
 import Modal from '../../components/Modal'
+import PecaCompativelSelector from '../../components/PecaCompativelSelector'
 import {
   FAIXA_EQUIPAMENTO_LABEL,
   type AvaliarItemRequest,
   type ItemConsertoCreateRequest,
   type ItemEntradaDTO,
   type StatusItemEntrada,
+  type TipoItem,
   type TipoItemConserto,
 } from '../../types/os'
+import type { PecaDTO } from '../../types/peca'
 
 const STATUS_LABEL: Record<StatusItemEntrada, string> = {
   PENDENTE_AVALIACAO: 'Pendente de avaliação',
@@ -261,6 +264,10 @@ export default function ItemEntradaCard({ item, onAtualizado }: Props) {
       {acao === 'adicionar-conserto' && (
         <ItemConsertoModal
           semCusto={item.garantia}
+          tipoItem={item.tipoItem}
+          catalogoModeloId={item.catalogoModeloId}
+          catalogoValorReferencia={item.catalogoValorReferencia}
+          descricaoItem={item.descricao}
           onClose={() => setAcao(null)}
           onSalvar={dados => executar(() => itensEntradaApi.adicionarItemConserto(item.id, dados))}
           processando={processando}
@@ -333,72 +340,119 @@ function MotivoModal({
 }
 
 function ItemConsertoModal({
-  semCusto, onClose, onSalvar, processando,
+  semCusto, tipoItem, catalogoModeloId, catalogoValorReferencia, descricaoItem, onClose, onSalvar, processando,
 }: {
   semCusto?: boolean
+  tipoItem: TipoItem
+  catalogoModeloId?: string
+  catalogoValorReferencia?: number
+  descricaoItem: string
   onClose: () => void
   onSalvar: (dados: ItemConsertoCreateRequest) => void
   processando: boolean
 }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<{
-    tipo: TipoItemConserto
-    descricao: string
-    quantidade: number
-    valorUnitario: number
-  }>({ defaultValues: { tipo: 'PECA', quantidade: 1, valorUnitario: semCusto ? 0 : undefined } })
+  const [tipo, setTipo] = useState<TipoItemConserto>('PECA')
+  const [pecaSelecionada, setPecaSelecionada] = useState<PecaDTO | null>(null)
+  const [descricao, setDescricao] = useState('')
+  const [quantidade, setQuantidade] = useState('1')
+  const [valorUnitario, setValorUnitario] = useState(semCusto ? '0' : '')
 
-  const onSubmit = handleSubmit(d =>
-    onSalvar({
-      tipo: d.tipo,
-      descricao: d.descricao || undefined,
-      quantidade: Number(d.quantidade),
-      valorUnitario: semCusto ? 0 : Number(d.valorUnitario),
-    })
-  )
+  const isPecaEquipamento = tipo === 'PECA' && tipoItem === 'EQUIPAMENTO'
+  const isAcessorioNovo = tipo === 'PECA' && tipoItem === 'ACESSORIO'
+
+  const mudarTipo = (novoTipo: TipoItemConserto) => {
+    setTipo(novoTipo)
+    setPecaSelecionada(null)
+    if (novoTipo === 'PECA' && tipoItem === 'ACESSORIO' && !semCusto) {
+      setValorUnitario(catalogoValorReferencia ? String(catalogoValorReferencia) : '')
+    }
+  }
+
+  const selecionarPeca = (peca: PecaDTO) => {
+    setPecaSelecionada(peca)
+    if (!semCusto) {
+      setValorUnitario(peca.valorUnitario ? String(peca.valorUnitario) : '')
+    }
+  }
+
+  const podeSubmeter = isPecaEquipamento
+    ? pecaSelecionada != null
+    : Number(quantidade) > 0 && (semCusto || valorUnitario !== '')
+
+  const submit = () => {
+    if (!podeSubmeter) return
+    const base = {
+      quantidade: Number(quantidade) || 1,
+      valorUnitario: semCusto ? 0 : Number(valorUnitario) || 0,
+    }
+    if (isPecaEquipamento && pecaSelecionada) {
+      onSalvar({ tipo: 'PECA', itemEstoqueId: pecaSelecionada.id, descricao: pecaSelecionada.descricao, ...base })
+    } else if (isAcessorioNovo) {
+      onSalvar({ tipo: 'PECA', descricao: `${descricaoItem} (novo)`, ...base })
+    } else {
+      onSalvar({ tipo, descricao: descricao || undefined, ...base })
+    }
+  }
 
   return (
     <Modal title="Adicionar item de conserto" onClose={onClose}>
-      <form onSubmit={onSubmit}>
-        {semCusto && (
-          <div className="form-hint" style={{ marginBottom: 12 }}>Garantia — sem custo.</div>
-        )}
+      {semCusto && (
+        <div className="form-hint" style={{ marginBottom: 12 }}>Garantia — sem custo.</div>
+      )}
+      <div className="form-field" style={{ marginBottom: 12 }}>
+        <label className="form-label">Tipo</label>
+        <select className="form-select" value={tipo} onChange={e => mudarTipo(e.target.value as TipoItemConserto)}>
+          <option value="PECA">Peça</option>
+          <option value="MAO_DE_OBRA">Mão de obra</option>
+          <option value="DESLOCAMENTO">Deslocamento</option>
+        </select>
+      </div>
+
+      {isPecaEquipamento && (
         <div className="form-field" style={{ marginBottom: 12 }}>
-          <label className="form-label">Tipo</label>
-          <select className="form-select" {...register('tipo')}>
-            <option value="PECA">Peça</option>
-            <option value="MAO_DE_OBRA">Mão de obra</option>
-            <option value="DESLOCAMENTO">Deslocamento</option>
-          </select>
-        </div>
-        <div className="form-field" style={{ marginBottom: 12 }}>
-          <label className="form-label">Descrição</label>
-          <input className="form-input" {...register('descricao')} />
-        </div>
-        <div className="form-row form-row-2">
-          <div className="form-field">
-            <label className="form-label">Quantidade</label>
-            <input
-              type="number" min={1} step={1}
-              className={`form-input${errors.quantidade ? ' error' : ''}`}
-              {...register('quantidade', { required: true, min: 1 })}
-            />
-          </div>
-          {!semCusto && (
-            <div className="form-field">
-              <label className="form-label">Valor unitário (R$)</label>
-              <input
-                type="number" min={0} step="0.01"
-                className={`form-input${errors.valorUnitario ? ' error' : ''}`}
-                {...register('valorUnitario', { required: true, min: 0 })}
-              />
-            </div>
+          <label className="form-label">Peça</label>
+          <PecaCompativelSelector catalogoModeloId={catalogoModeloId} onSelecionar={selecionarPeca} />
+          {pecaSelecionada && (
+            <div className="form-hint" style={{ marginTop: 6 }}>Selecionada: {pecaSelecionada.descricao}</div>
           )}
         </div>
-        <div className="modal-footer">
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
-          <button type="submit" className="btn btn-amber" disabled={processando}>Adicionar</button>
+      )}
+
+      {isAcessorioNovo && (
+        <div className="form-hint" style={{ marginBottom: 12 }}>Acessório novo — {descricaoItem}.</div>
+      )}
+
+      {!isPecaEquipamento && !isAcessorioNovo && (
+        <div className="form-field" style={{ marginBottom: 12 }}>
+          <label className="form-label">Descrição</label>
+          <input className="form-input" value={descricao} onChange={e => setDescricao(e.target.value)} />
         </div>
-      </form>
+      )}
+
+      <div className="form-row form-row-2">
+        <div className="form-field">
+          <label className="form-label">Quantidade</label>
+          <input
+            type="number" min={1} step={1} className="form-input"
+            value={quantidade} onChange={e => setQuantidade(e.target.value)}
+          />
+        </div>
+        {!semCusto && (
+          <div className="form-field">
+            <label className="form-label">Valor unitário (R$)</label>
+            <input
+              type="number" min={0} step="0.01" className="form-input"
+              value={valorUnitario} onChange={e => setValorUnitario(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
+      <div className="modal-footer">
+        <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+        <button type="button" className="btn btn-amber" disabled={processando || !podeSubmeter} onClick={submit}>
+          Adicionar
+        </button>
+      </div>
     </Modal>
   )
 }

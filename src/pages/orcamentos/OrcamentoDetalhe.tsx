@@ -355,6 +355,11 @@ function ItemOrcamentoCard({
   const [qtdAcessorio, setQtdAcessorio] = useState('1')
   const [valorAcessorio, setValorAcessorio] = useState('')
 
+  const selecionarPeca = (peca: PecaDTO) => {
+    setPecaPendente(peca)
+    setValorPendente(peca.valorUnitario ? String(peca.valorUnitario) : '')
+  }
+
   const adicionarPeca = async () => {
     if (!pecaPendente) return
     setSalvando(true)
@@ -597,7 +602,7 @@ function ItemOrcamentoCard({
             </div>
           ) : (
             <>
-              <PecaCompativelSelector catalogoModeloId={item.catalogoModeloId} onSelecionar={setPecaPendente} />
+              <PecaCompativelSelector catalogoModeloId={item.catalogoModeloId} onSelecionar={selecionarPeca} />
 
               {pecaPendente && (
                 <div className="section-card" style={{ marginTop: 8, background: 'var(--bg3)' }}>
