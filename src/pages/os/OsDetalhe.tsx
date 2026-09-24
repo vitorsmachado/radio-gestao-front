@@ -11,7 +11,13 @@ import ClienteRapidoModal from '../clientes/ClienteRapidoModal'
 import ItemEntradaCard from './ItemEntradaCard'
 import ItemEntradaForm from './ItemEntradaForm'
 import type { ClienteDTO } from '../../types/cliente'
-import type { AtualizarOrdemServicoRequest, ItemEntradaCreateRequest, ItemEntradaDTO, OrdemServicoDTO, StatusOS } from '../../types/os'
+import type {
+  AtualizarOrdemServicoRequest,
+  ItemEntradaCreateRequest,
+  ItemEntradaDTO,
+  OrdemServicoDTO,
+  StatusOS,
+} from '../../types/os'
 
 const STATUS_OS_LABEL: Record<StatusOS, string> = {
   ABERTA: 'Aberta',
@@ -40,6 +46,8 @@ export default function OsDetalhe() {
   const [modalEntrega, setModalEntrega] = useState(false)
   const [modalCancelar, setModalCancelar] = useState(false)
   const [modalEditar, setModalEditar] = useState(false)
+  const [modalDividir, setModalDividir] = useState(false)
+  const [novaOSCriada, setNovaOSCriada] = useState<OrdemServicoDTO | null>(null)
   const [processando, setProcessando] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
 
@@ -101,6 +109,9 @@ export default function OsDetalhe() {
 
   const encerrada = os.status === 'CONCLUIDA' || os.status === 'CANCELADA'
   const podeEditar = os.status !== 'CONCLUIDA'
+  const itensNaoProntos = itens.filter(i => i.status !== 'AGUARDANDO_ENTREGA' && i.status !== 'ENTREGUE')
+  const itensAguardandoPeca = itens.filter(i => i.status === 'AGUARDANDO_PECA')
+  const podeConfirmarEntrega = !encerrada && itensNaoProntos.length === 0
 
   return (
     <div className="fade-in">
@@ -129,6 +140,15 @@ export default function OsDetalhe() {
 
       {erro && <div className="error-banner">{erro}</div>}
 
+      {novaOSCriada && (
+        <div className="section-card" style={{ marginBottom: 20, borderColor: 'var(--green)' }}>
+          OS dividida — itens aguardando peça foram movidos pra{' '}
+          <span className="crumb" style={{ cursor: 'pointer' }} onClick={() => navigate(`/os/${novaOSCriada.id}`)}>
+            {novaOSCriada.numero}
+          </span>.
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
         {podeEditar && (
           <button className="btn btn-sm btn-ghost" onClick={() => setModalEditar(true)}>Editar</button>
@@ -136,13 +156,29 @@ export default function OsDetalhe() {
         {os.status === 'ABERTA' && (
           <button className="btn btn-sm btn-amber" onClick={iniciarAndamento}>Iniciar andamento</button>
         )}
-        {!encerrada && (
+        {podeConfirmarEntrega && (
           <button className="btn btn-sm btn-green" onClick={() => setModalEntrega(true)}>Confirmar entrega</button>
         )}
         {!encerrada && (
           <button className="btn btn-sm btn-danger" onClick={() => setModalCancelar(true)}>Cancelar OS</button>
         )}
       </div>
+
+      {!encerrada && itensNaoProntos.length > 0 && (
+        <div className="section-card" style={{ marginBottom: 20, borderColor: 'var(--amber)' }}>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>
+            {itensNaoProntos.length} item(ns) ainda não {itensNaoProntos.length > 1 ? 'estão prontos' : 'está pronto'} pra entrega
+          </div>
+          <div className="page-sub" style={{ marginBottom: itensAguardandoPeca.length > 0 ? 8 : 0 }}>
+            A entrega só pode ser confirmada quando todos os itens estiverem aguardando entrega ou entregues.
+          </div>
+          {itensAguardandoPeca.length > 0 && (
+            <button className="btn btn-sm btn-amber" onClick={() => setModalDividir(true)}>
+              Dividir OS (tirar {itensAguardandoPeca.length} item(ns) aguardando peça)
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="section-hd">
         <h3>Itens ({itens.length})</h3>
@@ -191,6 +227,18 @@ export default function OsDetalhe() {
           os={os}
           onClose={() => setModalEditar(false)}
           onSalvo={atualizado => { setOs(atualizado); setModalEditar(false) }}
+        />
+      )}
+
+      {modalDividir && (
+        <DividirOSModal
+          itens={itensAguardandoPeca}
+          onClose={() => setModalDividir(false)}
+          onDividido={novaOS => {
+            setNovaOSCriada(novaOS)
+            setModalDividir(false)
+            carregar()
+          }}
         />
       )}
     </div>
@@ -365,6 +413,67 @@ function CancelarModal({ onClose, onConfirmar }: { onClose: () => void; onConfir
           <button type="submit" className="btn btn-danger" disabled={isSubmitting}>Cancelar OS</button>
         </div>
       </form>
+    </Modal>
+  )
+}
+
+function DividirOSModal({
+  itens, onClose, onDividido,
+}: {
+  itens: ItemEntradaDTO[]
+  onClose: () => void
+  onDividido: (novaOS: OrdemServicoDTO) => void
+}) {
+  const [selecionados, setSelecionados] = useState<string[]>(itens.map(i => i.id))
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  const alternar = (itemId: string) =>
+    setSelecionados(prev => (prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]))
+
+  const dividir = async () => {
+    if (selecionados.length === 0) { setErro('Selecione ao menos um item.'); return }
+    setSalvando(true)
+    setErro(null)
+    try {
+      const novaOS = await osApi.dividir(itens[0].osId, { itemIds: selecionados })
+      onDividido(novaOS)
+    } catch (e: unknown) {
+      const msg =
+        (e as { response?: { data?: { message?: string } } })
+          ?.response?.data?.message ?? 'Não foi possível dividir a OS.'
+      setErro(msg)
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <Modal
+      title="Dividir OS"
+      subtitle="Os itens marcados saem desta OS e vão pra uma nova, mantendo o status de aguardando peça."
+      onClose={onClose}
+    >
+      {erro && <div className="error-banner">{erro}</div>}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+        {itens.map(item => (
+          <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={selecionados.includes(item.id)}
+              onChange={() => alternar(item.id)}
+            />
+            {item.descricao}{item.numeroSerie ? ` · S/N ${item.numeroSerie}` : ''}
+          </label>
+        ))}
+      </div>
+
+      <div className="modal-footer">
+        <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+        <button type="button" className="btn btn-amber" disabled={salvando} onClick={dividir}>
+          {salvando ? '// dividindo...' : 'Dividir OS'}
+        </button>
+      </div>
     </Modal>
   )
 }

@@ -92,6 +92,11 @@ export interface OrdemServicoCreateRequest {
   observacoes?: string
 }
 
+export interface DividirOSRequest {
+  itemIds: string[]
+  solicitante?: string
+}
+
 /** Edição livre da OS — permitida em qualquer status, menos CONCLUIDA. */
 export interface AtualizarOrdemServicoRequest {
   clienteId: string
