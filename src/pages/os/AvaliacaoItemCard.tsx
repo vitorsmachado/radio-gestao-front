@@ -1,75 +1,21 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { clientesApi } from '../../api/clientes'
 import { itensEntradaApi } from '../../api/itensEntrada'
-import { itensEntradaAvaliacaoApi, osApi } from '../../api/os'
+import { itensEntradaAvaliacaoApi } from '../../api/os'
 import PecaCompativelSelector from '../../components/PecaCompativelSelector'
 import SugestaoTextArea from '../../components/SugestaoTextArea'
-import ItemEntradaCard from '../os/ItemEntradaCard'
-import type { ClienteDTO } from '../../types/cliente'
-import type { GarantiaPecaDTO, ItemEntradaDTO, OrdemServicoDTO, ResultadoAvaliacao } from '../../types/os'
+import type { GarantiaPecaDTO, ItemEntradaDTO, ResultadoAvaliacao } from '../../types/os'
 import { RESULTADO_AVALIACAO_LABEL } from '../../types/os'
 import type { PecaDTO } from '../../types/peca'
 
 const RESULTADOS: ResultadoAvaliacao[] = ['AJUSTE', 'ORCAMENTO', 'SEM_DEFEITO', 'SEM_CONSERTO']
 
-export default function AvaliacaoOS() {
-  const { osId } = useParams<{ osId: string }>()
-  const navigate = useNavigate()
-  const [os, setOs] = useState<OrdemServicoDTO | null>(null)
-  const [cliente, setCliente] = useState<ClienteDTO | null>(null)
-  const [itens, setItens] = useState<ItemEntradaDTO[]>([])
-  const [carregando, setCarregando] = useState(true)
-  const [erro, setErro] = useState<string | null>(null)
-
-  const carregar = () => {
-    if (!osId) return
-    setCarregando(true)
-    setErro(null)
-    Promise.all([osApi.buscarPorId(osId), itensEntradaApi.listarPorOS(osId)])
-      .then(([osData, itensData]) => {
-        setOs(osData)
-        setItens(itensData)
-        return clientesApi.buscarPorId(osData.clienteId)
-      })
-      .then(setCliente)
-      .catch(() => setErro('Não foi possível carregar a OS.'))
-      .finally(() => setCarregando(false))
-  }
-
-  useEffect(carregar, [osId])
-
-  const atualizarItem = (atualizado: ItemEntradaDTO) =>
-    setItens(prev => prev.map(i => (i.id === atualizado.id ? atualizado : i)))
-
-  if (carregando) return <div className="loading">Carregando</div>
-  if (erro || !os) return <div className="error-banner">{erro ?? 'OS não encontrada.'}</div>
-
-  return (
-    <div className="fade-in">
-      <div className="breadcrumb">
-        <span className="crumb" onClick={() => navigate('/manutencao')}>Manutenções</span>
-        <span className="sep">/</span>
-        <span className="current">{os.numero}</span>
-      </div>
-
-      <div className="page-header">
-        <div>
-          <div className="page-title">{os.numero}</div>
-          <div className="page-sub">{cliente?.nomeRazaoSocial ?? '—'}</div>
-        </div>
-      </div>
-
-      {itens.map(item => (
-        item.status === 'PENDENTE_AVALIACAO' || item.status === 'EM_AVALIACAO'
-          ? <AvaliacaoItemCard key={item.id} item={item} onAtualizado={atualizarItem} />
-          : <ItemEntradaCard key={item.id} item={item} onAtualizado={atualizarItem} />
-      ))}
-    </div>
-  )
-}
-
-function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtualizado: (i: ItemEntradaDTO) => void }) {
+export default function AvaliacaoItemCard({
+  item, onAtualizado, onRemovido,
+}: {
+  item: ItemEntradaDTO
+  onAtualizado: (i: ItemEntradaDTO) => void
+  onRemovido?: (itemId: string) => void
+}) {
   const [expandido, setExpandido] = useState(false)
   const [resultado, setResultado] = useState<ResultadoAvaliacao>(item.resultadoAvaliacao ?? 'ORCAMENTO')
   const [detalheAjuste, setDetalheAjuste] = useState(item.detalheAjuste ?? '')
@@ -83,6 +29,7 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
   const [qtdPendente, setQtdPendente] = useState('1')
   const [adicionandoPeca, setAdicionandoPeca] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [removendo, setRemovendo] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   const precisaConserto = resultado === 'AJUSTE' || resultado === 'ORCAMENTO'
@@ -162,6 +109,19 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
       setErro(msg ?? 'Não foi possível salvar a avaliação.')
     } finally {
       setSalvando(false)
+    }
+  }
+
+  const remover = async () => {
+    if (!window.confirm(`Remover "${item.descricao}" da OS? O cliente decidiu não deixar o item.`)) return
+    setRemovendo(true)
+    setErro(null)
+    try {
+      await itensEntradaApi.remover(item.id)
+      onRemovido?.(item.id)
+    } catch {
+      setErro('Não foi possível remover o item.')
+      setRemovendo(false)
     }
   }
 
@@ -291,7 +251,12 @@ function AvaliacaoItemCard({ item, onAtualizado }: { item: ItemEntradaDTO; onAtu
             <SugestaoTextArea campo="OBSERVACOES_TECNICAS" label="Observações técnicas" value={observacoesTecnicas} onChange={setObservacoesTecnicas} />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {item.status === 'PENDENTE_AVALIACAO' && onRemovido ? (
+              <button type="button" className="btn btn-danger" disabled={removendo} onClick={remover}>
+                Remover item
+              </button>
+            ) : <span />}
             <button type="button" className="btn btn-amber" disabled={salvando} onClick={salvar}>
               {salvando ? '// salvando...' : 'Salvar avaliação'}
             </button>

@@ -16,7 +16,6 @@ import OsDetalhe from './pages/os/OsDetalhe'
 
 // Manutenção (técnico)
 import FilaManutencao from './pages/manutencao/FilaManutencao'
-import AvaliacaoOS from './pages/manutencao/AvaliacaoOS'
 
 // Orçamentos
 import OrcamentosLista from './pages/orcamentos/OrcamentosLista'
@@ -68,7 +67,6 @@ const router = createBrowserRouter([
                 element: <RotaProtegida roles={['TECNICO', 'ADMIN']} />,
                 children: [
                   { path: '/manutencao', element: <FilaManutencao /> },
-                  { path: '/manutencao/:osId', element: <AvaliacaoOS /> },
                 ],
               },
               {

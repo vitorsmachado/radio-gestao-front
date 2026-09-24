@@ -174,7 +174,7 @@ export default function FilaManutencao() {
                   </div>
                 )}
 
-                <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => navigate(`/manutencao/${os.osId}`)}>
+                <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => navigate(`/os/${os.osId}`)}>
                   <div style={{ fontWeight: 600 }}>{os.osNumero}</div>
                   <div className="page-sub">
                     {os.clienteNome ?? '—'} · {TIPO_OS_LABEL.ORCAMENTO_MANUTENCAO}

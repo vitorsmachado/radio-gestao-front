@@ -57,26 +57,12 @@ type Acao = 'avaliar' | 'atualizar-avaliacao' | 'nao-autorizar' | 'adicionar-con
 interface Props {
   item: ItemEntradaDTO
   onAtualizado: (item: ItemEntradaDTO) => void
-  onRemovido?: (itemId: string) => void
 }
 
-export default function ItemEntradaCard({ item, onAtualizado, onRemovido }: Props) {
+export default function ItemEntradaCard({ item, onAtualizado }: Props) {
   const [acao, setAcao] = useState<Acao>(null)
   const [processando, setProcessando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
-
-  const remover = async () => {
-    if (!window.confirm(`Remover "${item.descricao}" da OS? O cliente decidiu não deixar o item.`)) return
-    setProcessando(true)
-    setErro(null)
-    try {
-      await itensEntradaApi.remover(item.id)
-      onRemovido?.(item.id)
-    } catch {
-      setErro('Não foi possível remover o item.')
-      setProcessando(false)
-    }
-  }
 
   const executar = async (fn: () => Promise<ItemEntradaDTO>) => {
     setProcessando(true)
@@ -243,11 +229,6 @@ export default function ItemEntradaCard({ item, onAtualizado, onRemovido }: Prop
         {podeAdicionarConserto && (
           <button className="btn btn-sm btn-ghost" onClick={() => setAcao('adicionar-conserto')}>
             + Item de conserto
-          </button>
-        )}
-        {item.status === 'PENDENTE_AVALIACAO' && onRemovido && (
-          <button className="btn btn-sm btn-danger" disabled={processando} onClick={remover}>
-            Remover item
           </button>
         )}
       </div>

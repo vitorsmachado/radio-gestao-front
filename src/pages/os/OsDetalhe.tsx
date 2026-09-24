@@ -8,6 +8,7 @@ import ClienteAutocomplete from '../../components/ClienteAutocomplete'
 import Modal from '../../components/Modal'
 import { fecharComConfirmacao } from '../../utils/fecharComConfirmacao'
 import ClienteRapidoModal from '../clientes/ClienteRapidoModal'
+import AvaliacaoItemCard from './AvaliacaoItemCard'
 import ItemEntradaCard from './ItemEntradaCard'
 import ItemEntradaForm from './ItemEntradaForm'
 import type { ClienteDTO } from '../../types/cliente'
@@ -192,7 +193,9 @@ export default function OsDetalhe() {
       {itens.length === 0 && <div className="empty">Nenhum item registrado ainda.</div>}
 
       {itens.map(item => (
-        <ItemEntradaCard key={item.id} item={item} onAtualizado={atualizarItem} onRemovido={removerItem} />
+        item.status === 'PENDENTE_AVALIACAO' || item.status === 'EM_AVALIACAO'
+          ? <AvaliacaoItemCard key={item.id} item={item} onAtualizado={atualizarItem} onRemovido={removerItem} />
+          : <ItemEntradaCard key={item.id} item={item} onAtualizado={atualizarItem} />
       ))}
 
       {modalItem && (
