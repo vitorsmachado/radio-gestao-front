@@ -80,18 +80,24 @@ export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }
         </div>
 
         {tipoItem === 'EQUIPAMENTO' && (
-          <div className="form-field" style={{ marginBottom: 12 }}>
-            <label className="form-label">Faixa</label>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {Object.entries(FAIXA_EQUIPAMENTO_LABEL).map(([valor, label]) => (
-                <button
-                  key={valor} type="button"
-                  className={`btn btn-sm${faixa === valor ? ' btn-amber' : ''}`}
-                  onClick={() => setValue('faixa', valor as FaixaEquipamento)}
-                >
-                  {label}
-                </button>
-              ))}
+          <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
+            <div className="form-field">
+              <label className="form-label">Faixa</label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {Object.entries(FAIXA_EQUIPAMENTO_LABEL).map(([valor, label]) => (
+                  <button
+                    key={valor} type="button"
+                    className={`btn btn-sm${faixa === valor ? ' btn-amber' : ''}`}
+                    onClick={() => setValue('faixa', valor as FaixaEquipamento)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="form-field">
+              <label className="form-label">Número de série</label>
+              <input className="form-input" {...register('numeroSerie')} />
             </div>
           </div>
         )}
@@ -115,7 +121,7 @@ export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }
           </div>
         )}
 
-        {porQuantidade ? (
+        {porQuantidade && (
           <div className="form-field" style={{ marginBottom: 12, maxWidth: 160 }}>
             <label className="form-label">Quantidade</label>
             <input
@@ -123,17 +129,27 @@ export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }
               {...register('quantidade', { valueAsNumber: true, min: 1 })}
             />
           </div>
-        ) : (
-          <div className="form-field" style={{ marginBottom: 12 }}>
-            <label className="form-label">Número de série</label>
-            <input className="form-input" {...register('numeroSerie')} />
+        )}
+
+        {tipoItem === 'ACESSORIO' && !porQuantidade && (
+          <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
+            <div className="form-field">
+              <label className="form-label">Código do cliente</label>
+              <input className="form-input" placeholder="Identificação própria do cliente pro item" {...register('codigoCliente')} />
+            </div>
+            <div className="form-field">
+              <label className="form-label">Número de série</label>
+              <input className="form-input" {...register('numeroSerie')} />
+            </div>
           </div>
         )}
 
-        <div className="form-field" style={{ marginBottom: 12 }}>
-          <label className="form-label">Código do cliente</label>
-          <input className="form-input" placeholder="Identificação própria do cliente pro item" {...register('codigoCliente')} />
-        </div>
+        {(tipoItem === 'EQUIPAMENTO' || porQuantidade) && (
+          <div className="form-field" style={{ marginBottom: 12 }}>
+            <label className="form-label">Código do cliente</label>
+            <input className="form-input" placeholder="Identificação própria do cliente pro item" {...register('codigoCliente')} />
+          </div>
+        )}
 
         <div className="form-field" style={{ marginBottom: 12 }}>
           <label className="form-label">Defeito relatado pelo cliente</label>

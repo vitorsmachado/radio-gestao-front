@@ -604,18 +604,24 @@ function ItemRascunhoCard({
           </div>
 
           {item.tipoItem === 'EQUIPAMENTO' && (
-            <div className="form-field" style={{ marginBottom: 12 }}>
-              <label className="form-label">Faixa</label>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {Object.entries(FAIXA_EQUIPAMENTO_LABEL).map(([valor, label]) => (
-                  <button
-                    key={valor} type="button"
-                    className={`btn btn-sm${item.faixa === valor ? ' btn-amber' : ''}`}
-                    onClick={() => onAtualizar({ faixa: valor as FaixaEquipamento })}
-                  >
-                    {label}
-                  </button>
-                ))}
+            <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
+              <div className="form-field">
+                <label className="form-label">Faixa</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {Object.entries(FAIXA_EQUIPAMENTO_LABEL).map(([valor, label]) => (
+                    <button
+                      key={valor} type="button"
+                      className={`btn btn-sm${item.faixa === valor ? ' btn-amber' : ''}`}
+                      onClick={() => onAtualizar({ faixa: valor as FaixaEquipamento })}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="form-field">
+                <label className="form-label">Número de série</label>
+                <input className="form-input" value={item.numeroSerie} onChange={e => onAtualizar({ numeroSerie: e.target.value })} />
               </div>
             </div>
           )}
@@ -645,7 +651,7 @@ function ItemRascunhoCard({
             </div>
           )}
 
-          {porQuantidade ? (
+          {porQuantidade && (
             <div className="form-field" style={{ marginBottom: 12, maxWidth: 160 }}>
               <label className="form-label">Quantidade</label>
               <input
@@ -654,20 +660,33 @@ function ItemRascunhoCard({
                 onChange={e => onAtualizar({ quantidade: Number(e.target.value) || 1 })}
               />
             </div>
-          ) : (
-            <div className="form-field" style={{ marginBottom: 12 }}>
-              <label className="form-label">Número de série</label>
-              <input className="form-input" value={item.numeroSerie} onChange={e => onAtualizar({ numeroSerie: e.target.value })} />
+          )}
+
+          {item.tipoItem === 'ACESSORIO' && !porQuantidade && (
+            <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
+              <div className="form-field">
+                <label className="form-label">Código do cliente</label>
+                <input
+                  className="form-input" placeholder="Identificação própria do cliente pro item"
+                  value={item.codigoCliente} onChange={e => onAtualizar({ codigoCliente: e.target.value })}
+                />
+              </div>
+              <div className="form-field">
+                <label className="form-label">Número de série</label>
+                <input className="form-input" value={item.numeroSerie} onChange={e => onAtualizar({ numeroSerie: e.target.value })} />
+              </div>
             </div>
           )}
 
-          <div className="form-field" style={{ marginBottom: 12 }}>
-            <label className="form-label">Código do cliente</label>
-            <input
-              className="form-input" placeholder="Identificação própria do cliente pro item"
-              value={item.codigoCliente} onChange={e => onAtualizar({ codigoCliente: e.target.value })}
-            />
-          </div>
+          {(item.tipoItem === 'EQUIPAMENTO' || porQuantidade) && (
+            <div className="form-field" style={{ marginBottom: 12 }}>
+              <label className="form-label">Código do cliente</label>
+              <input
+                className="form-input" placeholder="Identificação própria do cliente pro item"
+                value={item.codigoCliente} onChange={e => onAtualizar({ codigoCliente: e.target.value })}
+              />
+            </div>
+          )}
 
           <div className="form-field">
             <label className="form-label">Defeito relatado pelo cliente</label>
