@@ -90,6 +90,7 @@ export interface OrdemServicoCreateRequest {
   /** Opcional — se ausente, o backend usa o momento da criação. */
   dataAbertura?: string
   observacoes?: string
+  numeroRelatorio?: string
 }
 
 export interface DividirOSRequest {

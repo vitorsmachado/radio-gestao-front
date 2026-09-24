@@ -24,6 +24,7 @@ interface FormValues {
   solicitante: string
   dataAbertura: string
   observacoes: string
+  numeroRelatorio: string
 }
 
 type TipoContato = 'COMERCIAL' | 'TECNICO' | 'FINANCEIRO' | 'GERENCIAL'
@@ -147,7 +148,7 @@ export default function OsForm() {
     setValue,
     formState: { isSubmitting, isDirty: formIsDirty },
   } = useForm<FormValues>({
-    defaultValues: { solicitante: '', dataAbertura: agoraDatetimeLocal(), observacoes: '' },
+    defaultValues: { solicitante: '', dataAbertura: agoraDatetimeLocal(), observacoes: '', numeroRelatorio: '' },
   })
 
   const isDirty = formIsDirty || !!clienteId || itensRascunho.length > 0
@@ -253,6 +254,7 @@ export default function OsForm() {
         solicitante: d.solicitante.trim() || undefined,
         dataAbertura: d.dataAbertura ? `${d.dataAbertura}:00` : undefined,
         observacoes: d.observacoes.trim() || undefined,
+        numeroRelatorio: d.numeroRelatorio.trim() || undefined,
       })
     } catch (e: unknown) {
       const msg =
@@ -419,6 +421,11 @@ export default function OsForm() {
           <div className="form-field" style={{ marginBottom: 12 }}>
             <label className="form-label">Data e hora de abertura</label>
             <input type="datetime-local" className="form-input" {...register('dataAbertura')} />
+          </div>
+
+          <div className="form-field" style={{ marginBottom: 12 }}>
+            <label className="form-label">Número do relatório</label>
+            <input className="form-input" placeholder="Relatório manual da retirada dos itens" {...register('numeroRelatorio')} />
           </div>
 
           <div className="form-field">
