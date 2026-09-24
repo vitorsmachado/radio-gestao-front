@@ -56,7 +56,7 @@ export default function AvaliacaoItemCard({
         itemEstoqueId: pecaPendente.id,
         descricao: pecaPendente.descricao,
         quantidade: Number(qtdPendente) || 1,
-        valorUnitario: 0,
+        valorUnitario: pecaPendente.valorUnitario ?? 0,
       })
       onAtualizado(atualizado)
       setPecaPendente(null)
