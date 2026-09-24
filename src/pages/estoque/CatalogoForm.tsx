@@ -4,6 +4,7 @@ import { catalogoApi } from '../../api/catalogo'
 import Modal from '../../components/Modal'
 import type { CatalogoModeloDTO, StatusCatalogo, TipoAcessorio } from '../../types/catalogo'
 import type { TipoItem } from '../../types/os'
+import { fecharComConfirmacao } from '../../utils/fecharComConfirmacao'
 
 const TIPO_ACESSORIO_LABEL: Record<TipoAcessorio, string> = {
   BATERIA: 'Bateria',
@@ -42,7 +43,7 @@ export default function CatalogoForm({ modelo, onClose, onSalvo }: Props) {
     register,
     handleSubmit,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({
     defaultValues: {
       tipoItem: modelo?.tipoItem ?? 'EQUIPAMENTO',
@@ -57,6 +58,7 @@ export default function CatalogoForm({ modelo, onClose, onSalvo }: Props) {
   })
 
   const tipoItem = watch('tipoItem')
+  const fechar = () => fecharComConfirmacao(isDirty, onClose)
 
   useEffect(() => {
     catalogoApi.listarMarcas().then(setMarcas).catch(() => setMarcas([]))
@@ -98,7 +100,7 @@ export default function CatalogoForm({ modelo, onClose, onSalvo }: Props) {
     <Modal
       title={editando ? 'Editar item do catálogo' : 'Novo item do catálogo'}
       subtitle="Marca, modelo e tipo identificam o item em todo o sistema."
-      onClose={onClose}
+      onClose={fechar}
     >
       {erro && <div className="error-banner">{erro}</div>}
 
@@ -178,7 +180,7 @@ export default function CatalogoForm({ modelo, onClose, onSalvo }: Props) {
         )}
 
         <div className="modal-footer">
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+          <button type="button" className="btn btn-ghost" onClick={fechar}>Cancelar</button>
           <button type="submit" className="btn btn-amber" disabled={isSubmitting}>
             {isSubmitting ? '// salvando...' : 'Salvar'}
           </button>

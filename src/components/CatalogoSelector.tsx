@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { catalogoApi } from '../api/catalogo'
 import type { CatalogoModeloCreateRequest, CatalogoModeloDTO } from '../types/catalogo'
 import type { TipoItem } from '../types/os'
+import { fecharComConfirmacao } from '../utils/fecharComConfirmacao'
 
 interface Props {
   tipoItem: TipoItem
@@ -127,7 +128,7 @@ export default function CatalogoSelector({ tipoItem, selecionado, onSelecionar }
   )
 }
 
-function CadastrarModeloModal({
+export function CadastrarModeloModal({
   tipoItem, marcaModeloInicial, onClose, onCriado,
 }: {
   tipoItem: TipoItem
@@ -141,6 +142,9 @@ function CadastrarModeloModal({
   const [valorReferencia, setValorReferencia] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+
+  const dirty = !!(marca.trim() || modelo.trim() || descricao.trim() || valorReferencia.trim())
+  const fechar = () => fecharComConfirmacao(dirty, onClose)
 
   const submit = async () => {
     if (!marca.trim() || !modelo.trim()) { setErro('Marca e modelo são obrigatórios.'); return }
@@ -164,7 +168,7 @@ function CadastrarModeloModal({
   }
 
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && fechar()}>
       <div className="modal" style={{ width: 420 }}>
         <div className="modal-title">Cadastrar modelo</div>
         <div className="modal-sub">Não encontrado no catálogo — cadastro rápido</div>
@@ -191,7 +195,7 @@ function CadastrarModeloModal({
           />
         </div>
         <div className="modal-footer">
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+          <button type="button" className="btn btn-ghost" onClick={fechar}>Cancelar</button>
           <button type="button" className="btn btn-amber" disabled={salvando} onClick={submit}>
             {salvando ? '// salvando...' : 'Cadastrar'}
           </button>
