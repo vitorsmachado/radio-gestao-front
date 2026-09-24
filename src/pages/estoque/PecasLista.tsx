@@ -173,8 +173,8 @@ export default function PecasLista() {
                       <button className="btn btn-sm btn-green" title="Entrada" onClick={() => setModalMovimentacao({ peca, tipo: 'entrada' })}>+</button>
                       <button className="btn btn-sm btn-danger" title="Saída" onClick={() => setModalMovimentacao({ peca, tipo: 'saida' })}>−</button>
                       <button className="btn btn-sm" title="Ajustar saldo" onClick={() => setModalMovimentacao({ peca, tipo: 'ajuste' })}>Ajustar</button>
-                      <button className="btn btn-sm btn-ghost" title="Histórico de movimentação" onClick={() => setModalHistorico(peca)}>Histórico</button>
-                      <button className="btn btn-sm btn-ghost" onClick={() => setModalEditar(peca)}>Editar</button>
+                      <button className="btn btn-sm" title="Histórico de movimentação" onClick={() => setModalHistorico(peca)}>Histórico</button>
+                      <button className="btn btn-sm" onClick={() => setModalEditar(peca)}>Editar</button>
                     </div>
                   </td>
                 </tr>
