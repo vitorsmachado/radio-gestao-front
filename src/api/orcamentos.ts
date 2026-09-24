@@ -15,6 +15,9 @@ export const orcamentosApi = {
   buscarPorId: (id: string) =>
     api.get<OrcamentoDTO>(`/v1/orcamentos/${id}`).then(r => r.data),
 
+  listarPorOS: (osId: string) =>
+    api.get<OrcamentoDTO[]>('/v1/orcamentos', { params: { osId } }).then(r => r.data),
+
   atualizar: (id: string, data: AtualizarOrcamentoRequest) =>
     api.patch<OrcamentoDTO>(`/v1/orcamentos/${id}`, data).then(r => r.data),
 

@@ -219,6 +219,7 @@ export default function OrcamentoDetalhe() {
         {orc.status === 'RASCUNHO' && (
           <button className="btn btn-sm btn-amber" disabled={processando} onClick={enviar}>Enviar ao cliente</button>
         )}
+        <button className="btn btn-sm" onClick={() => navigate(`/os/${orc.osId}`)}>Ver OS</button>
         {orc.status !== 'CANCELADO' && (
           <button className="btn btn-sm btn-danger" onClick={() => setModalMotivo({ tipo: 'cancelar' })}>Cancelar</button>
         )}

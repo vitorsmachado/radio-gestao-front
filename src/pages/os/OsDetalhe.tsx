@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { clientesApi } from '../../api/clientes'
 import { osApi } from '../../api/os'
 import { itensEntradaApi } from '../../api/itensEntrada'
+import { orcamentosApi } from '../../api/orcamentos'
 import ClienteAutocomplete from '../../components/ClienteAutocomplete'
 import Modal from '../../components/Modal'
 import { fecharComConfirmacao } from '../../utils/fecharComConfirmacao'
@@ -19,6 +20,7 @@ import type {
   OrdemServicoDTO,
   StatusOS,
 } from '../../types/os'
+import { STATUS_ORCAMENTO_BADGE, STATUS_ORCAMENTO_LABEL, type OrcamentoDTO } from '../../types/orcamento'
 
 const STATUS_OS_LABEL: Record<StatusOS, string> = {
   ABERTA: 'Aberta',
@@ -40,6 +42,7 @@ export default function OsDetalhe() {
 
   const [os, setOs] = useState<OrdemServicoDTO | null>(null)
   const [itens, setItens] = useState<ItemEntradaDTO[]>([])
+  const [orcamentos, setOrcamentos] = useState<OrcamentoDTO[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -48,6 +51,7 @@ export default function OsDetalhe() {
   const [modalCancelar, setModalCancelar] = useState(false)
   const [modalEditar, setModalEditar] = useState(false)
   const [modalDividir, setModalDividir] = useState(false)
+  const [modalOrcamentos, setModalOrcamentos] = useState(false)
   const [novaOSCriada, setNovaOSCriada] = useState<OrdemServicoDTO | null>(null)
   const [processando, setProcessando] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
@@ -56,10 +60,11 @@ export default function OsDetalhe() {
     if (!id) return
     setCarregando(true)
     setErro(null)
-    Promise.all([osApi.buscarPorId(id), itensEntradaApi.listarPorOS(id)])
-      .then(([osData, itensData]) => {
+    Promise.all([osApi.buscarPorId(id), itensEntradaApi.listarPorOS(id), orcamentosApi.listarPorOS(id)])
+      .then(([osData, itensData, orcamentosData]) => {
         setOs(osData)
         setItens(itensData)
+        setOrcamentos(orcamentosData)
       })
       .catch(() => setErro('Não foi possível carregar a OS.'))
       .finally(() => setCarregando(false))
@@ -92,6 +97,14 @@ export default function OsDetalhe() {
     if (!id) return
     const atualizado = await osApi.iniciarAndamento(id)
     setOs(atualizado)
+  }
+
+  const irParaOrcamento = () => {
+    if (orcamentos.length === 1) {
+      navigate(`/orcamentos/${orcamentos[0].id}`)
+    } else {
+      setModalOrcamentos(true)
+    }
   }
 
   const baixarPdf = async () => {
@@ -163,6 +176,11 @@ export default function OsDetalhe() {
         )}
         {podeConfirmarEntrega && (
           <button className="btn btn-sm btn-green" onClick={() => setModalEntrega(true)}>Confirmar entrega</button>
+        )}
+        {orcamentos.length > 0 && (
+          <button className="btn btn-sm" onClick={irParaOrcamento}>
+            {orcamentos.length === 1 ? 'Ver orçamento' : `Ver orçamentos (${orcamentos.length})`}
+          </button>
         )}
         {!encerrada && (
           <button className="btn btn-sm btn-danger" onClick={() => setModalCancelar(true)}>Cancelar OS</button>
@@ -247,6 +265,24 @@ export default function OsDetalhe() {
             carregar()
           }}
         />
+      )}
+
+      {modalOrcamentos && (
+        <Modal title="Orçamentos desta OS" onClose={() => setModalOrcamentos(false)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {orcamentos.map(orc => (
+              <div
+                key={orc.id}
+                className="section-card"
+                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                onClick={() => navigate(`/orcamentos/${orc.id}`)}
+              >
+                <span>{orc.numero}</span>
+                <span className={`badge ${STATUS_ORCAMENTO_BADGE[orc.status]}`}>{STATUS_ORCAMENTO_LABEL[orc.status]}</span>
+              </div>
+            ))}
+          </div>
+        </Modal>
       )}
     </div>
   )
