@@ -204,6 +204,22 @@ export default function OsForm() {
     setExpandido(prev => prev.filter(id => id !== tempId))
   }
 
+  const duplicarItem = (tempId: string) => {
+    const original = itensRascunho.find(it => it.tempId === tempId)
+    if (!original) return
+    const copia: ItemRascunho = {
+      ...original,
+      tempId: gerarTempId(),
+      // Identificadores da unidade física não fazem sentido repetidos — o resto (tipo, marca,
+      // modelo, catálogo, defeito relatado) é o que poupa trabalho ao duplicar.
+      numeroSerie: '',
+      patrimonio: '',
+      codigoCliente: '',
+    }
+    setItensRascunho(prev => [...prev, copia])
+    setExpandido(prev => [...prev, copia.tempId])
+  }
+
   const toggleExpandido = (tempId: string) =>
     setExpandido(prev => (prev.includes(tempId) ? prev.filter(id => id !== tempId) : [...prev, tempId]))
 
@@ -415,6 +431,7 @@ export default function OsForm() {
             onToggle={() => toggleExpandido(item.tempId)}
             onAtualizar={patch => atualizarItem(item.tempId, patch)}
             onRemover={() => removerItem(item.tempId)}
+            onDuplicar={() => duplicarItem(item.tempId)}
           />
         ))}
 
@@ -450,7 +467,7 @@ export default function OsForm() {
 }
 
 function ItemRascunhoCard({
-  item, expandido, mostrarErro, onToggle, onAtualizar, onRemover,
+  item, expandido, mostrarErro, onToggle, onAtualizar, onRemover, onDuplicar,
 }: {
   item: ItemRascunho
   expandido: boolean
@@ -458,6 +475,7 @@ function ItemRascunhoCard({
   onToggle: () => void
   onAtualizar: (patch: Partial<ItemRascunho>) => void
   onRemover: () => void
+  onDuplicar: () => void
 }) {
   const porQuantidade = item.tipoItem === 'ACESSORIO' && item.rastreamento === 'QUANTIDADE'
   const usaCatalogo = item.tipoItem === 'EQUIPAMENTO' || item.tipoItem === 'ACESSORIO'
@@ -502,6 +520,12 @@ function ItemRascunhoCard({
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button
+            type="button" className="btn btn-sm btn-ghost"
+            onClick={e => { e.stopPropagation(); onDuplicar() }}
+          >
+            Duplicar
+          </button>
           <button
             type="button" className="btn btn-sm btn-ghost"
             onClick={e => { e.stopPropagation(); limparItem() }}
