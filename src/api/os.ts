@@ -36,9 +36,6 @@ export const osApi = {
   listarPorCliente: (clienteId: string) =>
     api.get<OrdemServicoDTO[]>('/v1/ordens-servico', { params: { clienteId } }).then(r => r.data),
 
-  iniciarAndamento: (id: string) =>
-    api.patch<OrdemServicoDTO>(`/v1/ordens-servico/${id}/iniciar-andamento`).then(r => r.data),
-
   confirmarEntrega: (id: string, nomeRecebedor: string) =>
     api.patch<OrdemServicoDTO>(`/v1/ordens-servico/${id}/confirmar-entrega`, { nomeRecebedor }).then(r => r.data),
 

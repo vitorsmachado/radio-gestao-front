@@ -93,12 +93,6 @@ export default function OsDetalhe() {
     }
   }
 
-  const iniciarAndamento = async () => {
-    if (!id) return
-    const atualizado = await osApi.iniciarAndamento(id)
-    setOs(atualizado)
-  }
-
   const irParaOrcamento = () => {
     if (orcamentos.length === 1) {
       navigate(`/orcamentos/${orcamentos[0].id}`)
@@ -170,9 +164,6 @@ export default function OsDetalhe() {
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
         {podeEditar && (
           <button className="btn btn-sm" onClick={() => setModalEditar(true)}>Editar</button>
-        )}
-        {os.status === 'ABERTA' && (
-          <button className="btn btn-sm btn-amber" onClick={iniciarAndamento}>Iniciar andamento</button>
         )}
         {podeConfirmarEntrega && (
           <button className="btn btn-sm btn-green" onClick={() => setModalEntrega(true)}>Confirmar entrega</button>
