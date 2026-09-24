@@ -541,19 +541,19 @@ function ItemRascunhoCard({
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <button
-            type="button" className="btn btn-sm btn-ghost"
+            type="button" className="btn btn-sm"
             onClick={e => { e.stopPropagation(); onDuplicar() }}
           >
             Duplicar
           </button>
           <button
-            type="button" className="btn btn-sm btn-ghost"
+            type="button" className="btn btn-sm"
             onClick={e => { e.stopPropagation(); limparItem() }}
           >
             Limpar
           </button>
           <button
-            type="button" className="btn btn-sm btn-ghost"
+            type="button" className="btn btn-sm"
             onClick={e => { e.stopPropagation(); onRemover() }}
           >
             Remover
@@ -629,41 +629,47 @@ function ItemRascunhoCard({
           {item.tipoItem === 'ACESSORIO' && (
             <div className="form-field" style={{ marginBottom: 12 }}>
               <label className="form-label">Rastreamento</label>
-              <div style={{ display: 'flex', gap: 16 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
-                  <input
-                    type="radio" checked={item.rastreamento === 'NS'}
-                    onChange={() => onAtualizar({ rastreamento: 'NS' })}
-                  />
-                  Rastreado (N/S ou patrimônio)
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
-                  <input
-                    type="radio" checked={item.rastreamento === 'QUANTIDADE'}
-                    onChange={() => onAtualizar({ rastreamento: 'QUANTIDADE' })}
-                  />
-                  Por quantidade
-                </label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  className={`btn btn-sm${item.rastreamento === 'NS' ? ' btn-amber' : ''}`}
+                  onClick={() => onAtualizar({ rastreamento: 'NS' })}
+                >
+                  N/S
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm${item.rastreamento === 'QUANTIDADE' ? ' btn-amber' : ''}`}
+                  onClick={() => onAtualizar({ rastreamento: 'QUANTIDADE' })}
+                >
+                  Qnt.
+                </button>
               </div>
               <div className="form-hint" style={{ marginTop: 4 }}>
-                Use "por quantidade" para acessórios sem identificação individual — ex: antenas genéricas.
+                Use "Qnt." para acessórios sem identificação individual — ex: antenas genéricas.
               </div>
             </div>
           )}
 
-          {porQuantidade && (
-            <div className="form-field" style={{ marginBottom: 12, maxWidth: 160 }}>
-              <label className="form-label">Quantidade</label>
-              <input
-                type="number" min={1} className="form-input"
-                value={item.quantidade}
-                onChange={e => onAtualizar({ quantidade: Number(e.target.value) || 1 })}
-              />
-            </div>
-          )}
-
-          {item.tipoItem === 'ACESSORIO' && !porQuantidade && (
+          {item.tipoItem === 'ACESSORIO' && (
             <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
+              <div className="form-field">
+                {porQuantidade ? (
+                  <>
+                    <label className="form-label">Quantidade</label>
+                    <input
+                      type="number" min={1} className="form-input"
+                      value={item.quantidade}
+                      onChange={e => onAtualizar({ quantidade: Number(e.target.value) || 1 })}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <label className="form-label">Número de série</label>
+                    <input className="form-input" value={item.numeroSerie} onChange={e => onAtualizar({ numeroSerie: e.target.value })} />
+                  </>
+                )}
+              </div>
               <div className="form-field">
                 <label className="form-label">Código do cliente</label>
                 <input
@@ -671,14 +677,10 @@ function ItemRascunhoCard({
                   value={item.codigoCliente} onChange={e => onAtualizar({ codigoCliente: e.target.value })}
                 />
               </div>
-              <div className="form-field">
-                <label className="form-label">Número de série</label>
-                <input className="form-input" value={item.numeroSerie} onChange={e => onAtualizar({ numeroSerie: e.target.value })} />
-              </div>
             </div>
           )}
 
-          {(item.tipoItem === 'EQUIPAMENTO' || porQuantidade) && (
+          {item.tipoItem === 'EQUIPAMENTO' && (
             <div className="form-field" style={{ marginBottom: 12 }}>
               <label className="form-label">Código do cliente</label>
               <input

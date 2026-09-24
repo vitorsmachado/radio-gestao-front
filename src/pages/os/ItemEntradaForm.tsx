@@ -105,46 +105,54 @@ export default function ItemEntradaForm({ osId, onClose, onSalvar, processando }
         {tipoItem === 'ACESSORIO' && (
           <div className="form-field" style={{ marginBottom: 12 }}>
             <label className="form-label">Rastreamento</label>
-            <div style={{ display: 'flex', gap: 16 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
-                <input type="radio" value="NS" {...register('rastreamento')} />
-                Rastreado (N/S ou patrimônio)
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
-                <input type="radio" value="QUANTIDADE" {...register('rastreamento')} />
-                Por quantidade
-              </label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                type="button"
+                className={`btn btn-sm${rastreamento === 'NS' ? ' btn-amber' : ''}`}
+                onClick={() => setValue('rastreamento', 'NS')}
+              >
+                N/S
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm${rastreamento === 'QUANTIDADE' ? ' btn-amber' : ''}`}
+                onClick={() => setValue('rastreamento', 'QUANTIDADE')}
+              >
+                Qnt.
+              </button>
             </div>
             <div className="form-hint" style={{ marginTop: 4 }}>
-              Use "por quantidade" para acessórios sem identificação individual — ex: antenas genéricas.
+              Use "Qnt." para acessórios sem identificação individual — ex: antenas genéricas.
             </div>
           </div>
         )}
 
-        {porQuantidade && (
-          <div className="form-field" style={{ marginBottom: 12, maxWidth: 160 }}>
-            <label className="form-label">Quantidade</label>
-            <input
-              type="number" min={1} className="form-input"
-              {...register('quantidade', { valueAsNumber: true, min: 1 })}
-            />
-          </div>
-        )}
-
-        {tipoItem === 'ACESSORIO' && !porQuantidade && (
+        {tipoItem === 'ACESSORIO' && (
           <div className="form-row form-row-2" style={{ marginBottom: 12 }}>
+            <div className="form-field">
+              {porQuantidade ? (
+                <>
+                  <label className="form-label">Quantidade</label>
+                  <input
+                    type="number" min={1} className="form-input"
+                    {...register('quantidade', { valueAsNumber: true, min: 1 })}
+                  />
+                </>
+              ) : (
+                <>
+                  <label className="form-label">Número de série</label>
+                  <input className="form-input" {...register('numeroSerie')} />
+                </>
+              )}
+            </div>
             <div className="form-field">
               <label className="form-label">Código do cliente</label>
               <input className="form-input" placeholder="Identificação própria do cliente pro item" {...register('codigoCliente')} />
             </div>
-            <div className="form-field">
-              <label className="form-label">Número de série</label>
-              <input className="form-input" {...register('numeroSerie')} />
-            </div>
           </div>
         )}
 
-        {(tipoItem === 'EQUIPAMENTO' || porQuantidade) && (
+        {tipoItem === 'EQUIPAMENTO' && (
           <div className="form-field" style={{ marginBottom: 12 }}>
             <label className="form-label">Código do cliente</label>
             <input className="form-input" placeholder="Identificação própria do cliente pro item" {...register('codigoCliente')} />
