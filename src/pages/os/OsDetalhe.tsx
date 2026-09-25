@@ -74,6 +74,8 @@ export default function OsDetalhe() {
 
   const atualizarItem = (item: ItemEntradaDTO) => {
     setItens(prev => prev.map(i => (i.id === item.id ? item : i)))
+    // Uma avaliação pode gerar (ou reabrir) um orçamento automaticamente — reconsulta pra o botão "Ver orçamento" aparecer sem precisar recarregar a página.
+    if (os) orcamentosApi.listarPorOS(os.id).then(setOrcamentos).catch(() => {})
   }
 
   const removerItem = (itemId: string) => {

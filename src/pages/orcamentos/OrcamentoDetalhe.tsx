@@ -518,7 +518,10 @@ function ItemOrcamentoCard({
             {itensConsertoOrdenados.map(ic => (
               <tr key={ic.id}>
                 <td>{TIPO_CONSERTO_LABEL[ic.tipo]}</td>
-                <td>{ic.descricao || '—'}</td>
+                <td>
+                  {ic.descricao || '—'}
+                  {ic.coberto && <span className="badge b-green" style={{ marginLeft: 6 }}>Garantia</span>}
+                </td>
                 <td>{ic.quantidade}</td>
                 <td>
                   {podeEditarPecas && editandoValorId === ic.id ? (

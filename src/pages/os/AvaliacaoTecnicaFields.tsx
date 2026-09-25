@@ -46,7 +46,7 @@ export default function AvaliacaoTecnicaFields({
   const [erroPeca, setErroPeca] = useState<string | null>(null)
 
   const precisaConserto = valores.resultado === 'AJUSTE' || valores.resultado === 'ORCAMENTO'
-  const mostrarSeletorPeca = precisaConserto && !valores.garantiaPecaId && item.tipoItem !== 'ACESSORIO'
+  const mostrarSeletorPeca = precisaConserto && item.tipoItem !== 'ACESSORIO'
 
   useEffect(() => {
     if (!precisaConserto || !item.itemEstoqueId) {
@@ -111,21 +111,27 @@ export default function AvaliacaoTecnicaFields({
       {coberturas.length > 0 && (
         <div className="form-field" style={{ marginBottom: 14 }}>
           <label className="form-label">Esse defeito é de uma peça em garantia?</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-              <input type="radio" checked={valores.garantiaPecaId === ''} onChange={() => onAtualizar({ garantiaPecaId: '' })} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+            <button
+              type="button"
+              className={`btn btn-sm${valores.garantiaPecaId === '' ? ' btn-amber' : ''}`}
+              onClick={() => onAtualizar({ garantiaPecaId: '' })}
+            >
               Não — é um problema diferente
-            </label>
+            </button>
             {coberturas.map(c => (
-              <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-                <input type="radio" checked={valores.garantiaPecaId === c.id} onChange={() => onAtualizar({ garantiaPecaId: c.id })} />
+              <button
+                key={c.id} type="button"
+                className={`btn btn-sm${valores.garantiaPecaId === c.id ? ' btn-amber' : ''}`}
+                onClick={() => onAtualizar({ garantiaPecaId: c.id })}
+              >
                 {c.descricaoPeca ?? 'Peça'} — garantia até {new Date(c.dataFim).toLocaleDateString('pt-BR')}
-              </label>
+              </button>
             ))}
           </div>
           {valores.garantiaPecaId && (
             <div className="form-hint" style={{ marginTop: 4 }}>
-              Coberto por garantia — sem custo, sem orçamento. Segue direto pra manutenção.
+              Marcado como garantia — a peça continua escolhida abaixo, e no orçamento fica indicado que é coberta.
             </div>
           )}
         </div>

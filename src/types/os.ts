@@ -117,6 +117,8 @@ export interface ItemConsertoDTO {
   quantidade: number
   valorUnitario: number
   valorTotal: number
+  /** Se essa peça tem cobertura de garantia ativa agora — só informativo, o admin decide se cobra. */
+  coberto: boolean
 }
 
 export interface ItemConsertoCreateRequest {
