@@ -16,7 +16,7 @@ export interface AvaliacaoTecnicaValores {
   causaDefeito: string
   solucaoRecomendada: string
   observacoesTecnicas: string
-  garantiaPecaId: string
+  garantiaPecaIds: string[]
 }
 
 export function valoresIniciais(item: ItemEntradaDTO): AvaliacaoTecnicaValores {
@@ -27,7 +27,7 @@ export function valoresIniciais(item: ItemEntradaDTO): AvaliacaoTecnicaValores {
     causaDefeito: item.causaDefeito ?? '',
     solucaoRecomendada: item.solucaoRecomendada ?? '',
     observacoesTecnicas: item.observacoesTecnicas ?? '',
-    garantiaPecaId: '',
+    garantiaPecaIds: [],
   }
 }
 
@@ -91,6 +91,38 @@ export default function AvaliacaoTecnicaFields({
     }
   }
 
+  /** Marcar garantia já adiciona a peça no conserto (sem isso o orçamento fica sem nada pra mostrar); desmarcar remove de novo. */
+  const alternarGarantia = async (cobertura: GarantiaPecaDTO) => {
+    const selecionada = valores.garantiaPecaIds.includes(cobertura.id)
+    setErroPeca(null)
+    if (selecionada) {
+      const conserto = item.itensConserto.find(ic => ic.itemEstoqueId === cobertura.pecaEstoqueId)
+      if (conserto) {
+        try {
+          onAtualizadoItem(await itensEntradaApi.removerItemConserto(item.id, conserto.id))
+        } catch {
+          setErroPeca('Não foi possível remover a peça da garantia.')
+        }
+      }
+      onAtualizar({ garantiaPecaIds: valores.garantiaPecaIds.filter(id => id !== cobertura.id) })
+      return
+    }
+    try {
+      const atualizado = await itensEntradaApi.adicionarItemConserto(item.id, {
+        tipo: 'PECA',
+        itemEstoqueId: cobertura.pecaEstoqueId,
+        descricao: cobertura.descricaoPeca,
+        quantidade: 1,
+        valorUnitario: 0,
+      })
+      onAtualizadoItem(atualizado)
+      onAtualizar({ garantiaPecaIds: [...valores.garantiaPecaIds, cobertura.id] })
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setErroPeca(msg ?? 'Não foi possível marcar a peça como garantia.')
+    }
+  }
+
   return (
     <>
       <div className="form-field" style={{ marginBottom: 12 }}>
@@ -111,27 +143,36 @@ export default function AvaliacaoTecnicaFields({
       {coberturas.length > 0 && (
         <div className="form-field" style={{ marginBottom: 14 }}>
           <label className="form-label">Esse defeito é de uma peça em garantia?</label>
+          <div className="form-hint" style={{ marginBottom: 6 }}>
+            Marcar já adiciona a peça no conserto — pode marcar mais de uma, se for o caso.
+          </div>
+          {erroPeca && <div className="error-banner">{erroPeca}</div>}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
             <button
               type="button"
-              className={`btn btn-sm${valores.garantiaPecaId === '' ? ' btn-amber' : ''}`}
-              onClick={() => onAtualizar({ garantiaPecaId: '' })}
+              className={`btn btn-sm${valores.garantiaPecaIds.length === 0 ? ' btn-amber' : ''}`}
+              onClick={() => coberturas.filter(c => valores.garantiaPecaIds.includes(c.id)).forEach(alternarGarantia)}
+              disabled={valores.garantiaPecaIds.length === 0}
             >
               Não — é um problema diferente
             </button>
-            {coberturas.map(c => (
-              <button
-                key={c.id} type="button"
-                className={`btn btn-sm${valores.garantiaPecaId === c.id ? ' btn-amber' : ''}`}
-                onClick={() => onAtualizar({ garantiaPecaId: c.id })}
-              >
-                {c.descricaoPeca ?? 'Peça'} — garantia até {new Date(c.dataFim).toLocaleDateString('pt-BR')}
-              </button>
-            ))}
+            {coberturas.map(c => {
+              const selecionada = valores.garantiaPecaIds.includes(c.id)
+              return (
+                <button
+                  key={c.id} type="button"
+                  className={`btn btn-sm${selecionada ? ' btn-amber' : ''}`}
+                  onClick={() => alternarGarantia(c)}
+                >
+                  {c.descricaoPeca ?? 'Peça'} — garantia até {new Date(c.dataFim).toLocaleDateString('pt-BR')}
+                </button>
+              )
+            })}
           </div>
-          {valores.garantiaPecaId && (
+          {valores.garantiaPecaIds.length > 0 && (
             <div className="form-hint" style={{ marginTop: 4 }}>
-              Marcado como garantia — a peça continua escolhida abaixo, e no orçamento fica indicado que é coberta.
+              Marcado como garantia — no orçamento fica indicado que é coberta.
+              Se todas as peças do conserto forem garantia, vai direto pra aguardando entrega ao salvar.
             </div>
           )}
         </div>

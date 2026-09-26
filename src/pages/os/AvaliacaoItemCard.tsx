@@ -41,7 +41,7 @@ export default function AvaliacaoItemCard({
         causaDefeito: valores.causaDefeito.trim() || undefined,
         solucaoRecomendada: valores.solucaoRecomendada.trim() || undefined,
         observacoesTecnicas: valores.observacoesTecnicas.trim() || undefined,
-        garantiaPecaId: valores.garantiaPecaId || undefined,
+        garantiaPecaIds: valores.garantiaPecaIds.length > 0 ? valores.garantiaPecaIds : undefined,
       })
       onAtualizado(atualizado)
       setExpandido(false)
