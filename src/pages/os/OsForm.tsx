@@ -16,7 +16,7 @@ import {
 } from '../../types/os'
 import ClienteRapidoModal from '../clientes/ClienteRapidoModal'
 import ItemRascunhoFields from './ItemRascunhoFields'
-import { formatarValorReferencia, gerarTempId, itemRascunhoVazio, paraCreateRequest, type ItemRascunho } from './itemRascunho'
+import { gerarTempId, itemRascunhoVazio, paraCreateRequest, type ItemRascunho } from './itemRascunho'
 
 interface FormValues {
   solicitante: string
@@ -464,7 +464,6 @@ function ItemRascunhoCard({
             {item.faixa ? ` · ${FAIXA_EQUIPAMENTO_LABEL[item.faixa]}` : ''}
             {item.numeroSerie ? ` · S/N ${item.numeroSerie}` : ''}
             {item.quantidade > 1 ? ` · Qtd. ${item.quantidade}` : ''}
-            {item.catalogo?.valorReferencia != null ? ` · ref. ${formatarValorReferencia(item.catalogo.valorReferencia)}` : ''}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>

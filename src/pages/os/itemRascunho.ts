@@ -103,7 +103,3 @@ export async function paraCreateRequest(osId: string, clienteId: string, item: I
     catalogoModeloId: item.catalogo?.id,
   }
 }
-
-export function formatarValorReferencia(v: number): string {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}

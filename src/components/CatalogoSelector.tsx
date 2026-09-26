@@ -10,11 +10,7 @@ interface Props {
   onSelecionar: (item: CatalogoModeloDTO | null) => void
 }
 
-function formatarValor(v: number): string {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-/** Busca modelo no catálogo com debounce — sugere marca/modelo e traz o valor de referência (preço de um novo). */
+/** Busca modelo no catálogo com debounce — sugere marca/modelo (sem mostrar preço, essa tela é do técnico). */
 export default function CatalogoSelector({ tipoItem, selecionado, onSelecionar }: Props) {
   const [busca, setBusca] = useState('')
   const [resultados, setResultados] = useState<CatalogoModeloDTO[]>([])
@@ -60,9 +56,6 @@ export default function CatalogoSelector({ tipoItem, selecionado, onSelecionar }
       }}>
         <span style={{ color: 'var(--amber)', fontFamily: 'var(--mono)', flexShrink: 0 }}>catálogo</span>
         <span style={{ fontWeight: 600 }}>{selecionado.marca} · {selecionado.modelo}</span>
-        {selecionado.valorReferencia != null && (
-          <span style={{ color: 'var(--text3)' }}>— ref. {formatarValor(selecionado.valorReferencia)}</span>
-        )}
         <button
           type="button" onClick={() => onSelecionar(null)}
           style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 14, padding: '0 2px' }}
@@ -96,10 +89,9 @@ export default function CatalogoSelector({ tipoItem, selecionado, onSelecionar }
               onMouseDown={() => selecionar(r)}
             >
               <div style={{ fontWeight: 600, fontSize: 13 }}>{r.marca} · {r.modelo}</div>
-              <div className="page-sub" style={{ marginTop: 2 }}>
-                {r.descricao ? `${r.descricao} · ` : ''}
-                {r.valorReferencia != null ? `ref. ${formatarValor(r.valorReferencia)}` : 'sem valor de referência'}
-              </div>
+              {r.descricao && (
+                <div className="page-sub" style={{ marginTop: 2 }}>{r.descricao}</div>
+              )}
             </div>
           ))}
           {!buscando && buscou && resultados.length === 0 && (
