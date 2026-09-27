@@ -4,6 +4,9 @@ import { configuracoesApi } from '../../api/configuracoes'
 
 interface FormValues {
   valorMaoDeObraPadrao: string
+  prazoGarantiaPecaDias: string
+  prazoGarantiaEquipamentoDias: string
+  prazoGarantiaAcessorioDias: string
 }
 
 export default function Configuracoes() {
@@ -13,12 +16,22 @@ export default function Configuracoes() {
   const [sucesso, setSucesso] = useState(false)
 
   const { register, handleSubmit, reset } = useForm<FormValues>({
-    defaultValues: { valorMaoDeObraPadrao: '0' },
+    defaultValues: {
+      valorMaoDeObraPadrao: '0',
+      prazoGarantiaPecaDias: '90',
+      prazoGarantiaEquipamentoDias: '90',
+      prazoGarantiaAcessorioDias: '90',
+    },
   })
 
   useEffect(() => {
     configuracoesApi.buscar()
-      .then(c => reset({ valorMaoDeObraPadrao: String(c.valorMaoDeObraPadrao) }))
+      .then(c => reset({
+        valorMaoDeObraPadrao: String(c.valorMaoDeObraPadrao),
+        prazoGarantiaPecaDias: String(c.prazoGarantiaPecaDias),
+        prazoGarantiaEquipamentoDias: String(c.prazoGarantiaEquipamentoDias),
+        prazoGarantiaAcessorioDias: String(c.prazoGarantiaAcessorioDias),
+      }))
       .catch(() => setErro('Não foi possível carregar as configurações.'))
       .finally(() => setCarregando(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -31,8 +44,16 @@ export default function Configuracoes() {
     try {
       const atualizado = await configuracoesApi.atualizar({
         valorMaoDeObraPadrao: Number(d.valorMaoDeObraPadrao) || 0,
+        prazoGarantiaPecaDias: Number(d.prazoGarantiaPecaDias) || 0,
+        prazoGarantiaEquipamentoDias: Number(d.prazoGarantiaEquipamentoDias) || 0,
+        prazoGarantiaAcessorioDias: Number(d.prazoGarantiaAcessorioDias) || 0,
       })
-      reset({ valorMaoDeObraPadrao: String(atualizado.valorMaoDeObraPadrao) })
+      reset({
+        valorMaoDeObraPadrao: String(atualizado.valorMaoDeObraPadrao),
+        prazoGarantiaPecaDias: String(atualizado.prazoGarantiaPecaDias),
+        prazoGarantiaEquipamentoDias: String(atualizado.prazoGarantiaEquipamentoDias),
+        prazoGarantiaAcessorioDias: String(atualizado.prazoGarantiaAcessorioDias),
+      })
       setSucesso(true)
     } catch (e: unknown) {
       const msg =
@@ -66,6 +87,39 @@ export default function Configuracoes() {
           />
           <div className="form-hint" style={{ marginTop: 4 }}>
             Preenche automaticamente ao adicionar mão de obra na avaliação ou no orçamento — dá pra mudar em cada item.
+          </div>
+        </div>
+
+        <div className="form-field" style={{ marginBottom: 12 }}>
+          <label className="form-label">Prazo de garantia da peça trocada (dias)</label>
+          <input
+            type="number" min={1} step="1" className="form-input"
+            {...register('prazoGarantiaPecaDias')}
+          />
+          <div className="form-hint" style={{ marginTop: 4 }}>
+            Prazo de cobertura da peça trocada num reparo — usado pro atalho de garantia na avaliação técnica.
+          </div>
+        </div>
+
+        <div className="form-field" style={{ marginBottom: 12 }}>
+          <label className="form-label">Prazo de garantia de equipamento (dias)</label>
+          <input
+            type="number" min={1} step="1" className="form-input"
+            {...register('prazoGarantiaEquipamentoDias')}
+          />
+          <div className="form-hint" style={{ marginTop: 4 }}>
+            Prazo de garantia de fábrica/venda aplicado a equipamentos cadastrados automaticamente pelo N/S.
+          </div>
+        </div>
+
+        <div className="form-field" style={{ marginBottom: 12 }}>
+          <label className="form-label">Prazo de garantia de acessório (dias)</label>
+          <input
+            type="number" min={1} step="1" className="form-input"
+            {...register('prazoGarantiaAcessorioDias')}
+          />
+          <div className="form-hint" style={{ marginTop: 4 }}>
+            Prazo de garantia de fábrica/venda aplicado a acessórios cadastrados automaticamente pelo N/S.
           </div>
         </div>
 
