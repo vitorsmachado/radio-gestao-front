@@ -93,8 +93,8 @@ export interface OrdemServicoCreateRequest {
   numeroRelatorio?: string
 }
 
-export interface DividirOSRequest {
-  itemIds: string[]
+export interface SepararOSRequest {
+  grupos: { itemIds: string[] }[]
   solicitante?: string
 }
 

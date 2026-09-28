@@ -6,6 +6,7 @@ import { itensEntradaApi } from '../../api/itensEntrada'
 import { orcamentosApi } from '../../api/orcamentos'
 import Modal from '../../components/Modal'
 import PecaCompativelSelector from '../../components/PecaCompativelSelector'
+import SepararOSModal from '../../components/SepararOSModal'
 import {
   STATUS_APROVACAO_BADGE,
   STATUS_APROVACAO_LABEL,
@@ -15,7 +16,7 @@ import {
   type AtualizarOrcamentoRequest,
   type OrcamentoDTO,
 } from '../../types/orcamento'
-import { RESULTADO_AVALIACAO_LABEL, type ItemEntradaDTO, type TipoItemConserto } from '../../types/os'
+import { RESULTADO_AVALIACAO_LABEL, type ItemEntradaDTO, type OrdemServicoDTO, type TipoItemConserto } from '../../types/os'
 import type { PecaDTO } from '../../types/peca'
 
 const TIPO_CONSERTO_LABEL: Record<TipoItemConserto, string> = {
@@ -75,6 +76,8 @@ export default function OrcamentoDetalhe() {
   const [agrupamento, setAgrupamento] = useState<AgrupamentoOrcamento>('EQUIPAMENTO')
   const [modalMotivo, setModalMotivo] = useState<{ tipo: 'cancelar' } | { tipo: 'nao-autorizar'; itemId: string } | null>(null)
   const [valorMaoDeObraPadrao, setValorMaoDeObraPadrao] = useState(0)
+  const [modalSeparar, setModalSeparar] = useState(false)
+  const [novasOSCriadas, setNovasOSCriadas] = useState<OrdemServicoDTO[]>([])
 
   useEffect(() => {
     configuracoesApi.buscar().then(c => setValorMaoDeObraPadrao(c.valorMaoDeObraPadrao)).catch(() => {})
@@ -228,12 +231,29 @@ export default function OrcamentoDetalhe() {
 
       {erro && <div className="error-banner">{erro}</div>}
 
+      {novasOSCriadas.length > 0 && (
+        <div className="section-card" style={{ marginBottom: 20, borderColor: 'var(--green)' }}>
+          Itens separados foram movidos pra{' '}
+          {novasOSCriadas.map((novaOS, i) => (
+            <span key={novaOS.id}>
+              <span className="crumb" style={{ cursor: 'pointer' }} onClick={() => navigate(`/os/${novaOS.id}`)}>
+                {novaOS.numero}
+              </span>
+              {i < novasOSCriadas.length - 1 ? ', ' : '.'}
+            </span>
+          ))}
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
         {orc.status === 'RASCUNHO' && orc.itens.some(i => i.status === 'AVALIADO') && (
           <button className="btn btn-sm btn-amber" disabled={processando} onClick={enviar}>Enviar ao cliente</button>
         )}
         {orc.status === 'ENVIADO' && (
           <button className="btn btn-sm" disabled={processando} onClick={reabrir}>Reabrir para editar</button>
+        )}
+        {orc.itens.length > 1 && (
+          <button className="btn btn-sm" onClick={() => setModalSeparar(true)}>Separar</button>
         )}
         <button className="btn btn-sm" onClick={() => navigate(`/os/${orc.osId}`)}>Ver OS</button>
         {orc.status !== 'CANCELADO' && (
@@ -340,6 +360,18 @@ export default function OrcamentoDetalhe() {
           onClose={() => setModalMotivo(null)}
           onSalvar={modalMotivo.tipo === 'cancelar' ? cancelar : naoAutorizarItem}
           processando={processando}
+        />
+      )}
+
+      {modalSeparar && (
+        <SepararOSModal
+          itens={orc.itens.filter(i => i.status !== 'ENTREGUE')}
+          onClose={() => setModalSeparar(false)}
+          onSeparado={novasOS => {
+            setNovasOSCriadas(novasOS)
+            setModalSeparar(false)
+            carregar()
+          }}
         />
       )}
     </div>

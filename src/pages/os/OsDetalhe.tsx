@@ -7,6 +7,7 @@ import { itensEntradaApi } from '../../api/itensEntrada'
 import { orcamentosApi } from '../../api/orcamentos'
 import ClienteAutocomplete from '../../components/ClienteAutocomplete'
 import Modal from '../../components/Modal'
+import SepararOSModal from '../../components/SepararOSModal'
 import { fecharComConfirmacao } from '../../utils/fecharComConfirmacao'
 import ClienteRapidoModal from '../clientes/ClienteRapidoModal'
 import AvaliacaoItemCard from './AvaliacaoItemCard'
@@ -50,9 +51,9 @@ export default function OsDetalhe() {
   const [modalEntrega, setModalEntrega] = useState(false)
   const [modalCancelar, setModalCancelar] = useState(false)
   const [modalEditar, setModalEditar] = useState(false)
-  const [modalDividir, setModalDividir] = useState(false)
+  const [modalSeparar, setModalSeparar] = useState<'todos' | 'aguardando-peca' | null>(null)
   const [modalOrcamentos, setModalOrcamentos] = useState(false)
-  const [novaOSCriada, setNovaOSCriada] = useState<OrdemServicoDTO | null>(null)
+  const [novasOSCriadas, setNovasOSCriadas] = useState<OrdemServicoDTO[]>([])
   const [processando, setProcessando] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
 
@@ -155,12 +156,17 @@ export default function OsDetalhe() {
 
       {erro && <div className="error-banner">{erro}</div>}
 
-      {novaOSCriada && (
+      {novasOSCriadas.length > 0 && (
         <div className="section-card" style={{ marginBottom: 20, borderColor: 'var(--green)' }}>
-          OS dividida — itens aguardando peça foram movidos pra{' '}
-          <span className="crumb" style={{ cursor: 'pointer' }} onClick={() => navigate(`/os/${novaOSCriada.id}`)}>
-            {novaOSCriada.numero}
-          </span>.
+          Itens separados foram movidos pra{' '}
+          {novasOSCriadas.map((novaOS, i) => (
+            <span key={novaOS.id}>
+              <span className="crumb" style={{ cursor: 'pointer' }} onClick={() => navigate(`/os/${novaOS.id}`)}>
+                {novaOS.numero}
+              </span>
+              {i < novasOSCriadas.length - 1 ? ', ' : '.'}
+            </span>
+          ))}
         </div>
       )}
 
@@ -170,6 +176,9 @@ export default function OsDetalhe() {
         )}
         {podeConfirmarEntrega && (
           <button className="btn btn-sm btn-green" onClick={() => setModalEntrega(true)}>Confirmar entrega</button>
+        )}
+        {!encerrada && itens.length > 1 && (
+          <button className="btn btn-sm" onClick={() => setModalSeparar('todos')}>Separar</button>
         )}
         {orcamentos.length > 0 && (
           <button className="btn btn-sm" onClick={irParaOrcamento}>
@@ -190,8 +199,8 @@ export default function OsDetalhe() {
             A entrega só pode ser confirmada quando todos os itens estiverem aguardando entrega ou entregues.
           </div>
           {itensAguardandoPeca.length > 0 && (
-            <button className="btn btn-sm btn-amber" onClick={() => setModalDividir(true)}>
-              Dividir OS (tirar {itensAguardandoPeca.length} item(ns) aguardando peça)
+            <button className="btn btn-sm btn-amber" onClick={() => setModalSeparar('aguardando-peca')}>
+              Separar itens aguardando peça ({itensAguardandoPeca.length})
             </button>
           )}
         </div>
@@ -250,13 +259,14 @@ export default function OsDetalhe() {
         />
       )}
 
-      {modalDividir && (
-        <DividirOSModal
-          itens={itensAguardandoPeca}
-          onClose={() => setModalDividir(false)}
-          onDividido={novaOS => {
-            setNovaOSCriada(novaOS)
-            setModalDividir(false)
+      {modalSeparar && (
+        <SepararOSModal
+          itens={itens.filter(i => i.status !== 'ENTREGUE')}
+          preSelecionados={modalSeparar === 'aguardando-peca' ? itensAguardandoPeca.map(i => i.id) : []}
+          onClose={() => setModalSeparar(null)}
+          onSeparado={novasOS => {
+            setNovasOSCriadas(novasOS)
+            setModalSeparar(null)
             carregar()
           }}
         />
@@ -455,63 +465,3 @@ function CancelarModal({ onClose, onConfirmar }: { onClose: () => void; onConfir
   )
 }
 
-function DividirOSModal({
-  itens, onClose, onDividido,
-}: {
-  itens: ItemEntradaDTO[]
-  onClose: () => void
-  onDividido: (novaOS: OrdemServicoDTO) => void
-}) {
-  const [selecionados, setSelecionados] = useState<string[]>(itens.map(i => i.id))
-  const [salvando, setSalvando] = useState(false)
-  const [erro, setErro] = useState<string | null>(null)
-
-  const alternar = (itemId: string) =>
-    setSelecionados(prev => (prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]))
-
-  const dividir = async () => {
-    if (selecionados.length === 0) { setErro('Selecione ao menos um item.'); return }
-    setSalvando(true)
-    setErro(null)
-    try {
-      const novaOS = await osApi.dividir(itens[0].osId, { itemIds: selecionados })
-      onDividido(novaOS)
-    } catch (e: unknown) {
-      const msg =
-        (e as { response?: { data?: { message?: string } } })
-          ?.response?.data?.message ?? 'Não foi possível dividir a OS.'
-      setErro(msg)
-      setSalvando(false)
-    }
-  }
-
-  return (
-    <Modal
-      title="Dividir OS"
-      subtitle="Os itens marcados saem desta OS e vão pra uma nova, mantendo o status de aguardando peça."
-      onClose={onClose}
-    >
-      {erro && <div className="error-banner">{erro}</div>}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-        {itens.map(item => (
-          <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={selecionados.includes(item.id)}
-              onChange={() => alternar(item.id)}
-            />
-            {item.descricao}{item.numeroSerie ? ` · S/N ${item.numeroSerie}` : ''}
-          </label>
-        ))}
-      </div>
-
-      <div className="modal-footer">
-        <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
-        <button type="button" className="btn btn-amber" disabled={salvando} onClick={dividir}>
-          {salvando ? '// dividindo...' : 'Dividir OS'}
-        </button>
-      </div>
-    </Modal>
-  )
-}

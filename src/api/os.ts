@@ -1,7 +1,6 @@
 import api from './axios'
 import type {
   AtualizarOrdemServicoRequest,
-  DividirOSRequest,
   FilaManutencaoOSDTO,
   GarantiaPecaDTO,
   HistoricoOSItemDTO,
@@ -11,6 +10,7 @@ import type {
   OrdemServicoResumoDTO,
   ReordenarFilaRequest,
   SalvarAvaliacaoTecnicaRequest,
+  SepararOSRequest,
 } from '../types/os'
 import type { PageResponse } from '../types/pagination'
 
@@ -42,8 +42,8 @@ export const osApi = {
   cancelar: (id: string, motivo: string) =>
     api.patch<OrdemServicoDTO>(`/v1/ordens-servico/${id}/cancelar`, { motivo }).then(r => r.data),
 
-  dividir: (id: string, data: DividirOSRequest) =>
-    api.post<OrdemServicoDTO>(`/v1/ordens-servico/${id}/dividir`, data).then(r => r.data),
+  separar: (id: string, data: SepararOSRequest) =>
+    api.post<OrdemServicoDTO[]>(`/v1/ordens-servico/${id}/separar`, data).then(r => r.data),
 
   listarFilaManutencao: () =>
     api.get<FilaManutencaoOSDTO[]>('/v1/ordens-servico/fila-manutencao').then(r => r.data),
