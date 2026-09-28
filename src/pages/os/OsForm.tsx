@@ -77,6 +77,10 @@ export default function OsForm() {
   const [expandido, setExpandido] = useState<string[]>([])
   const [tentouSalvar, setTentouSalvar] = useState(false)
 
+  /** 0 = OS principal; N > 0 = grupo N, que vira uma OS separada ao criar. */
+  const [gruposItem, setGruposItem] = useState<Record<string, number>>({})
+  const [numGruposExtras, setNumGruposExtras] = useState(0)
+
   const [osCriada, setOsCriada] = useState<OrdemServicoDTO | null>(null)
   const [erroCriacao, setErroCriacao] = useState<string | null>(null)
 
@@ -185,35 +189,44 @@ export default function OsForm() {
       return
     }
 
-    let novaOS: OrdemServicoDTO
+    const dadosOS = {
+      clienteId,
+      solicitante: d.solicitante.trim() || undefined,
+      dataAbertura: d.dataAbertura ? `${d.dataAbertura}:00` : undefined,
+      observacoes: d.observacoes.trim() || undefined,
+      numeroRelatorio: d.numeroRelatorio.trim() || undefined,
+    }
+
+    const grupoDe = (item: ItemRascunho) => gruposItem[item.tempId] ?? 0
+    const grupos = Array.from({ length: numGruposExtras + 1 }, (_, i) => i)
+      .map(grupo => itensRascunho.filter(item => grupoDe(item) === grupo))
+      .filter(itensDoGrupo => itensDoGrupo.length > 0)
+
+    const osCriadas: OrdemServicoDTO[] = []
     try {
-      novaOS = await osApi.criar({
-        clienteId,
-        solicitante: d.solicitante.trim() || undefined,
-        dataAbertura: d.dataAbertura ? `${d.dataAbertura}:00` : undefined,
-        observacoes: d.observacoes.trim() || undefined,
-        numeroRelatorio: d.numeroRelatorio.trim() || undefined,
-      })
+      for (const itensDoGrupo of grupos) {
+        const os = await osApi.criar(dadosOS)
+        osCriadas.push(os)
+        for (const item of itensDoGrupo) {
+          await itensEntradaApi.criar(await paraCreateRequest(os.id, clienteId, item))
+        }
+      }
     } catch (e: unknown) {
       const msg =
         (e as { response?: { data?: { message?: string } } })
-          ?.response?.data?.message ?? 'Não foi possível abrir a OS.'
-      setErroCriacao(msg)
+          ?.response?.data?.message ?? 'Não foi possível concluir a criação da OS.'
+      if (osCriadas.length > 0) {
+        setOsCriada(osCriadas[0])
+        const numeros = osCriadas.map(os => os.numero).join(', ')
+        setErroCriacao(`${msg} — a(s) OS ${numeros} já foi(ram) aberta(s), confira o que falta.`)
+      } else {
+        setErroCriacao(msg)
+      }
       return
     }
 
-    try {
-      for (const item of itensRascunho) {
-        await itensEntradaApi.criar(await paraCreateRequest(novaOS.id, clienteId, item))
-      }
-      navigate(`/os/${novaOS.id}`)
-    } catch (e: unknown) {
-      const msg =
-        (e as { response?: { data?: { message?: string } } })
-          ?.response?.data?.message ?? 'Não foi possível registrar um dos itens.'
-      setOsCriada(novaOS)
-      setErroCriacao(`OS ${novaOS.numero} foi aberta, mas: ${msg} — abra a OS para concluir a entrada dos itens.`)
-    }
+    const [principal, ...extras] = osCriadas
+    navigate(`/os/${principal.id}`, extras.length > 0 ? { state: { novasOSCriadas: extras } } : undefined)
   })
 
   if (!tipo) {
@@ -388,6 +401,11 @@ export default function OsForm() {
             onAtualizar={patch => atualizarItem(item.tempId, patch)}
             onRemover={() => removerItem(item.tempId)}
             onDuplicar={() => duplicarItem(item.tempId)}
+            mostrarGrupos={itensRascunho.length > 1}
+            grupo={gruposItem[item.tempId] ?? 0}
+            numGruposExtras={numGruposExtras}
+            onMudarGrupo={grupo => setGruposItem(prev => ({ ...prev, [item.tempId]: grupo }))}
+            onNovoGrupo={() => setNumGruposExtras(n => n + 1)}
           />
         ))}
 
@@ -424,6 +442,7 @@ export default function OsForm() {
 
 function ItemRascunhoCard({
   item, expandido, mostrarErro, onToggle, onAtualizar, onRemover, onDuplicar,
+  mostrarGrupos, grupo, numGruposExtras, onMudarGrupo, onNovoGrupo,
 }: {
   item: ItemRascunho
   expandido: boolean
@@ -432,6 +451,11 @@ function ItemRascunhoCard({
   onAtualizar: (patch: Partial<ItemRascunho>) => void
   onRemover: () => void
   onDuplicar: () => void
+  mostrarGrupos: boolean
+  grupo: number
+  numGruposExtras: number
+  onMudarGrupo: (grupo: number) => void
+  onNovoGrupo: () => void
 }) {
   const descricaoInvalida = mostrarErro && !item.descricao.trim()
 
@@ -488,6 +512,32 @@ function ItemRascunhoCard({
           <span style={{ fontSize: 11, color: 'var(--text3)' }}>{expandido ? '▲' : '▼'}</span>
         </div>
       </div>
+
+      {mostrarGrupos && (
+        <div
+          style={{ display: 'flex', gap: 4, flexWrap: 'wrap', padding: '0 14px 14px' }}
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            className={`btn btn-sm ${grupo === 0 ? 'btn-amber' : ''}`}
+            onClick={() => onMudarGrupo(0)}
+          >
+            OS principal
+          </button>
+          {Array.from({ length: numGruposExtras }, (_, i) => i + 1).map(g => (
+            <button
+              key={g}
+              type="button"
+              className={`btn btn-sm ${grupo === g ? 'btn-amber' : ''}`}
+              onClick={() => onMudarGrupo(g)}
+            >
+              Grupo {g}
+            </button>
+          ))}
+          <button type="button" className="btn btn-sm" onClick={onNovoGrupo}>+ Novo grupo</button>
+        </div>
+      )}
 
       {expandido && (
         <div style={{ padding: 14, borderTop: '0.5px solid var(--border)' }}>

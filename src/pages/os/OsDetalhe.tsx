@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { clientesApi } from '../../api/clientes'
 import { osApi } from '../../api/os'
 import { itensEntradaApi } from '../../api/itensEntrada'
@@ -40,6 +40,7 @@ const STATUS_OS_BADGE: Record<StatusOS, string> = {
 export default function OsDetalhe() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [os, setOs] = useState<OrdemServicoDTO | null>(null)
   const [itens, setItens] = useState<ItemEntradaDTO[]>([])
@@ -53,7 +54,9 @@ export default function OsDetalhe() {
   const [modalEditar, setModalEditar] = useState(false)
   const [modalSeparar, setModalSeparar] = useState<'todos' | 'aguardando-peca' | null>(null)
   const [modalOrcamentos, setModalOrcamentos] = useState(false)
-  const [novasOSCriadas, setNovasOSCriadas] = useState<OrdemServicoDTO[]>([])
+  const [novasOSCriadas, setNovasOSCriadas] = useState<OrdemServicoDTO[]>(
+    (location.state as { novasOSCriadas?: OrdemServicoDTO[] } | null)?.novasOSCriadas ?? [],
+  )
   const [processando, setProcessando] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
 
