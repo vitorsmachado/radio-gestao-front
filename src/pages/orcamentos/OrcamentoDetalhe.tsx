@@ -219,6 +219,7 @@ export default function OrcamentoDetalhe() {
           <span className={`badge ${STATUS_ORCAMENTO_BADGE[orc.status]}`}>{STATUS_ORCAMENTO_LABEL[orc.status]}</span>
           <span className={`badge ${STATUS_APROVACAO_BADGE[orc.statusAprovacao]}`}>{STATUS_APROVACAO_LABEL[orc.statusAprovacao]}</span>
           {orc.expirado && <span className="badge b-red">Expirado</span>}
+          {gerandoPdf && <div className="progress-bar" />}
           <button className="btn btn-sm" disabled={gerandoPdf} onClick={baixarPdf}>
             {gerandoPdf ? '// gerando...' : 'Baixar PDF'}
           </button>

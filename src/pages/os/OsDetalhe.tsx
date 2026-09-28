@@ -146,6 +146,7 @@ export default function OsDetalhe() {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span className={`badge ${STATUS_OS_BADGE[os.status]}`}>{STATUS_OS_LABEL[os.status]}</span>
+          {gerandoPdf && <div className="progress-bar" />}
           <button className="btn btn-sm" disabled={gerandoPdf} onClick={baixarPdf}>
             {gerandoPdf ? '// gerando...' : 'Baixar PDF'}
           </button>
