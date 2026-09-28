@@ -174,12 +174,6 @@ export default function ItemEntradaCard({ item, onAtualizado }: Props) {
           <button className="btn btn-sm" onClick={() => setAcao('atualizar-avaliacao')}>Atualizar avaliação</button>
         )}
 
-        {item.status === 'AVALIADO' && !item.semDefeito && (
-          <button className="btn btn-sm btn-amber" disabled={processando}
-            onClick={() => executar(() => itensEntradaApi.enviarParaAutorizacao(item.id))}>
-            Enviar para autorização
-          </button>
-        )}
         {item.status === 'AVALIADO' && item.semDefeito && (
           <button className="btn btn-sm btn-amber" disabled={processando}
             onClick={() => executar(() => itensEntradaApi.aguardarEntrega(item.id))}>

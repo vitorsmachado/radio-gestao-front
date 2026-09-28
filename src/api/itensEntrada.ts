@@ -22,9 +22,6 @@ export const itensEntradaApi = {
   atualizarAvaliacao: (id: string, data: AvaliarItemRequest) =>
     api.put<ItemEntradaDTO>(`/v1/itens-entrada/${id}/avaliacao`, data).then(r => r.data),
 
-  enviarParaAutorizacao: (id: string) =>
-    api.patch<ItemEntradaDTO>(`/v1/itens-entrada/${id}/enviar-autorizacao`).then(r => r.data),
-
   autorizar: (id: string) =>
     api.patch<ItemEntradaDTO>(`/v1/itens-entrada/${id}/autorizar`).then(r => r.data),
 
