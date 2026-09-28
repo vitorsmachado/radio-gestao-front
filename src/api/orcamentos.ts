@@ -24,6 +24,9 @@ export const orcamentosApi = {
   enviar: (id: string) =>
     api.patch<OrcamentoDTO>(`/v1/orcamentos/${id}/enviar`).then(r => r.data),
 
+  reabrir: (id: string) =>
+    api.patch<OrcamentoDTO>(`/v1/orcamentos/${id}/reabrir`).then(r => r.data),
+
   cancelar: (id: string, motivo: string) =>
     api.patch<OrcamentoDTO>(`/v1/orcamentos/${id}/cancelar`, { motivo }).then(r => r.data),
 

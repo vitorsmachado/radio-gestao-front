@@ -129,6 +129,18 @@ export default function OrcamentoDetalhe() {
     }
   }
 
+  const reabrir = async () => {
+    if (!id) return
+    setProcessando(true)
+    try {
+      setOrc(await orcamentosApi.reabrir(id))
+    } catch {
+      setErro('Não foi possível reabrir o orçamento.')
+    } finally {
+      setProcessando(false)
+    }
+  }
+
   const cancelar = async (motivo: string) => {
     if (!id) return
     setProcessando(true)
@@ -216,8 +228,11 @@ export default function OrcamentoDetalhe() {
       {erro && <div className="error-banner">{erro}</div>}
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
-        {orc.status === 'RASCUNHO' && (
+        {orc.status === 'RASCUNHO' && orc.itens.some(i => i.status === 'AVALIADO') && (
           <button className="btn btn-sm btn-amber" disabled={processando} onClick={enviar}>Enviar ao cliente</button>
+        )}
+        {orc.status === 'ENVIADO' && (
+          <button className="btn btn-sm" disabled={processando} onClick={reabrir}>Reabrir para editar</button>
         )}
         <button className="btn btn-sm" onClick={() => navigate(`/os/${orc.osId}`)}>Ver OS</button>
         {orc.status !== 'CANCELADO' && (
