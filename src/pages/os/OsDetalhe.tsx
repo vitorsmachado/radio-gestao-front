@@ -86,6 +86,10 @@ export default function OsDetalhe() {
     setItens(prev => prev.filter(i => i.id !== itemId))
   }
 
+  const itemDesmembrado = ([original, novo]: ItemEntradaDTO[]) => {
+    setItens(prev => [...prev.map(i => (i.id === original.id ? original : i)), novo])
+  }
+
   const novoItem = async (dados: ItemEntradaCreateRequest) => {
     setProcessando(true)
     try {
@@ -218,7 +222,7 @@ export default function OsDetalhe() {
 
       {itens.map(item => (
         item.status === 'PENDENTE_AVALIACAO' || item.status === 'EM_AVALIACAO'
-          ? <AvaliacaoItemCard key={item.id} item={item} onAtualizado={atualizarItem} onRemovido={removerItem} />
+          ? <AvaliacaoItemCard key={item.id} item={item} onAtualizado={atualizarItem} onRemovido={removerItem} onDesmembrado={itemDesmembrado} />
           : <ItemEntradaCard key={item.id} item={item} onAtualizado={atualizarItem} />
       ))}
 

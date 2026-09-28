@@ -16,6 +16,10 @@ export const itensEntradaApi = {
   remover: (id: string) =>
     api.delete<void>(`/v1/itens-entrada/${id}`).then(() => undefined),
 
+  /** @returns o item original (com a quantidade reduzida) e o item novo, nessa ordem. */
+  desmembrar: (id: string, quantidade: number) =>
+    api.post<ItemEntradaDTO[]>(`/v1/itens-entrada/${id}/desmembrar`, { quantidade }).then(r => r.data),
+
   avaliar: (id: string, data: AvaliarItemRequest) =>
     api.patch<ItemEntradaDTO>(`/v1/itens-entrada/${id}/avaliar`, data).then(r => r.data),
 

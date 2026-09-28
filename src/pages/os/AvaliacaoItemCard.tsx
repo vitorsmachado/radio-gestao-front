@@ -5,17 +5,20 @@ import type { ItemEntradaDTO } from '../../types/os'
 import AvaliacaoTecnicaFields, { valoresIniciais, type AvaliacaoTecnicaValores } from './AvaliacaoTecnicaFields'
 
 export default function AvaliacaoItemCard({
-  item, onAtualizado, onRemovido,
+  item, onAtualizado, onRemovido, onDesmembrado,
 }: {
   item: ItemEntradaDTO
   onAtualizado: (i: ItemEntradaDTO) => void
   onRemovido?: (itemId: string) => void
+  onDesmembrado?: (itens: ItemEntradaDTO[]) => void
 }) {
   const [expandido, setExpandido] = useState(false)
   const [valores, setValores] = useState<AvaliacaoTecnicaValores>(() => valoresIniciais(item))
   const [salvando, setSalvando] = useState(false)
   const [removendo, setRemovendo] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [qtdDesmembrar, setQtdDesmembrar] = useState(1)
+  const [desmembrando, setDesmembrando] = useState(false)
 
   const atualizarValores = (patch: Partial<AvaliacaoTecnicaValores>) => setValores(prev => ({ ...prev, ...patch }))
 
@@ -66,6 +69,21 @@ export default function AvaliacaoItemCard({
     }
   }
 
+  const desmembrar = async () => {
+    setDesmembrando(true)
+    setErro(null)
+    try {
+      const itens = await itensEntradaApi.desmembrar(item.id, qtdDesmembrar)
+      onDesmembrado?.(itens)
+      setQtdDesmembrar(1)
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setErro(msg ?? 'Não foi possível desmembrar o item.')
+    } finally {
+      setDesmembrando(false)
+    }
+  }
+
   return (
     <div className="section-card" style={{ padding: 0, overflow: 'hidden' }}>
       <div
@@ -73,7 +91,9 @@ export default function AvaliacaoItemCard({
         onClick={toggleExpandir}
       >
         <div>
-          <div style={{ fontWeight: 600 }}>{item.descricao}</div>
+          <div style={{ fontWeight: 600 }}>
+            {item.descricao}{item.quantidade > 1 ? ` (${item.quantidade}x)` : ''}
+          </div>
           <div className="page-sub">Defeito relatado: {item.defeitoRelatado || '—'}</div>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -87,6 +107,26 @@ export default function AvaliacaoItemCard({
       {expandido && (
         <div style={{ padding: 14, borderTop: '0.5px solid var(--border)' }}>
           {erro && <div className="error-banner">{erro}</div>}
+
+          {item.quantidade > 1 && (
+            <div className="section-card" style={{ marginBottom: 12 }}>
+              <div className="form-label" style={{ marginBottom: 6 }}>Desmembrar</div>
+              <div className="page-sub" style={{ marginBottom: 8 }}>
+                Separa uma quantidade num item novo e independente — útil quando nem todas as {item.quantidade} unidades
+                têm o mesmo defeito, ou vão pra equipamentos diferentes.
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="number" className="form-input" style={{ width: 80 }}
+                  min={1} max={item.quantidade - 1} value={qtdDesmembrar}
+                  onChange={e => setQtdDesmembrar(Number(e.target.value) || 1)}
+                />
+                <button type="button" className="btn btn-sm" disabled={desmembrando} onClick={desmembrar}>
+                  {desmembrando ? '// separando...' : 'Desmembrar'}
+                </button>
+              </div>
+            </div>
+          )}
 
           <AvaliacaoTecnicaFields item={item} valores={valores} onAtualizar={atualizarValores} onAtualizadoItem={onAtualizado} />
 
