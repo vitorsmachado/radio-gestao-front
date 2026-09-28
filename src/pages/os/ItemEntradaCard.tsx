@@ -7,6 +7,7 @@ import PecaCompativelSelector from '../../components/PecaCompativelSelector'
 import AvaliacaoTecnicaFields, { valoresIniciais, type AvaliacaoTecnicaValores } from './AvaliacaoTecnicaFields'
 import {
   FAIXA_EQUIPAMENTO_LABEL,
+  RESULTADO_AVALIACAO_LABEL,
   type AvaliarItemRequest,
   type ItemConsertoCreateRequest,
   type ItemEntradaDTO,
@@ -103,6 +104,9 @@ export default function ItemEntradaCard({ item, onAtualizado }: Props) {
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {item.garantia && <span className="badge b-green">Garantia</span>}
+          {item.resultadoAvaliacao && (
+            <span className="badge b-blue">{RESULTADO_AVALIACAO_LABEL[item.resultadoAvaliacao]}</span>
+          )}
           <span className={`badge ${STATUS_BADGE[item.status]}`}>{STATUS_LABEL[item.status]}</span>
         </div>
       </div>
@@ -111,8 +115,22 @@ export default function ItemEntradaCard({ item, onAtualizado }: Props) {
 
       <div style={{ fontSize: 13, marginBottom: 8 }}>
         <div><span className="form-label" style={{ display: 'inline' }}>Defeito relatado: </span>{item.defeitoRelatado || '—'}</div>
-        {item.avaliacaoTecnica && (
+        {item.defeitoEncontrado ? (
+          <div><span className="form-label" style={{ display: 'inline' }}>Defeito encontrado: </span>{item.defeitoEncontrado}</div>
+        ) : item.avaliacaoTecnica && (
           <div><span className="form-label" style={{ display: 'inline' }}>Avaliação técnica: </span>{item.avaliacaoTecnica}</div>
+        )}
+        {item.causaDefeito && (
+          <div><span className="form-label" style={{ display: 'inline' }}>Causa: </span>{item.causaDefeito}</div>
+        )}
+        {item.solucaoRecomendada && (
+          <div><span className="form-label" style={{ display: 'inline' }}>Solução recomendada: </span>{item.solucaoRecomendada}</div>
+        )}
+        {item.detalheAjuste && (
+          <div><span className="form-label" style={{ display: 'inline' }}>Detalhe do ajuste: </span>{item.detalheAjuste}</div>
+        )}
+        {item.observacoesTecnicas && (
+          <div><span className="form-label" style={{ display: 'inline' }}>Observações técnicas: </span>{item.observacoesTecnicas}</div>
         )}
         {item.motivoNaoAutorizado && (
           <div><span className="form-label" style={{ display: 'inline' }}>Motivo não autorizado: </span>{item.motivoNaoAutorizado}</div>

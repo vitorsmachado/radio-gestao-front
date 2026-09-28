@@ -499,6 +499,26 @@ function ItemOrcamentoCard({
           <span className="form-label" style={{ display: 'inline' }}>Defeito encontrado: </span>{item.defeitoEncontrado}
         </div>
       )}
+      {item.causaDefeito && (
+        <div style={{ fontSize: 13, marginBottom: 4 }}>
+          <span className="form-label" style={{ display: 'inline' }}>Causa: </span>{item.causaDefeito}
+        </div>
+      )}
+      {item.solucaoRecomendada && (
+        <div style={{ fontSize: 13, marginBottom: 4 }}>
+          <span className="form-label" style={{ display: 'inline' }}>Solução recomendada: </span>{item.solucaoRecomendada}
+        </div>
+      )}
+      {item.detalheAjuste && (
+        <div style={{ fontSize: 13, marginBottom: 4 }}>
+          <span className="form-label" style={{ display: 'inline' }}>Detalhe do ajuste: </span>{item.detalheAjuste}
+        </div>
+      )}
+      {item.observacoesTecnicas && (
+        <div style={{ fontSize: 13, marginBottom: 4 }}>
+          <span className="form-label" style={{ display: 'inline' }}>Observações técnicas: </span>{item.observacoesTecnicas}
+        </div>
+      )}
 
       {erro && <div className="error-banner">{erro}</div>}
 
