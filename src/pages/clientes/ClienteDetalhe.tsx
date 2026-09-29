@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { clientesApi } from '../../api/clientes'
 import { osApi } from '../../api/os'
 import AlterarStatusModal, { type AcaoStatus } from './AlterarStatusModal'
+import NovoContatoModal from './NovoContatoModal'
 import type { ClienteDTO, ItemGarantiaDTO } from '../../types/cliente'
 import type { HistoricoOSItemDTO, OrdemServicoDTO, StatusItemEntrada, StatusOS } from '../../types/os'
 
@@ -66,6 +67,7 @@ export default function ClienteDetalhe() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [modalStatus, setModalStatus] = useState<AcaoStatus | null>(null)
+  const [modalNovoContato, setModalNovoContato] = useState(false)
 
   const [editandoNumero, setEditandoNumero] = useState(false)
   const [novoNumero, setNovoNumero] = useState('')
@@ -218,6 +220,11 @@ export default function ClienteDetalhe() {
 
       {aba === 'contatos' && (
         <>
+          <div className="section-hd">
+            <h3>Contatos</h3>
+            <button className="btn btn-sm btn-amber" onClick={() => setModalNovoContato(true)}>+ Adicionar contato</button>
+          </div>
+
           {(!cliente.contatos || cliente.contatos.length === 0) && (
             <div className="empty">Nenhum contato cadastrado.</div>
           )}
@@ -228,6 +235,7 @@ export default function ClienteDetalhe() {
                   <th>Nome</th>
                   <th>Cargo</th>
                   <th>Telefone</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -236,6 +244,18 @@ export default function ClienteDetalhe() {
                     <td>{contato.nome}{contato.principal && <span className="badge b-blue" style={{ marginLeft: 6 }}>Principal</span>}</td>
                     <td>{contato.cargo || '—'}</td>
                     <td>{contato.telefone || '—'}</td>
+                    <td>
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={async () => {
+                          if (!id || !window.confirm(`Remover o contato "${contato.nome}"?`)) return
+                          const atualizado = await clientesApi.removerContato(id, contato.id)
+                          setCliente(atualizado)
+                        }}
+                      >
+                        Remover
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -344,6 +364,15 @@ export default function ClienteDetalhe() {
           acao={modalStatus}
           onClose={() => setModalStatus(null)}
           onSalvo={() => { setModalStatus(null); carregar() }}
+        />
+      )}
+
+      {modalNovoContato && id && (
+        <NovoContatoModal
+          clienteId={id}
+          temContatoPrincipal={!!cliente.contatos?.some(c => c.principal)}
+          onClose={() => setModalNovoContato(false)}
+          onSalvo={atualizado => { setCliente(atualizado); setModalNovoContato(false) }}
         />
       )}
     </div>

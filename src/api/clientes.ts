@@ -35,4 +35,7 @@ export const clientesApi = {
   /** Retorna o cliente completo (com a lista de contatos já atualizada), não só o contato criado. */
   criarContato: (clienteId: string, data: ContatoCreateRequest) =>
     api.post<ClienteDTO>(`/v1/clientes/${clienteId}/contatos`, data).then(r => r.data),
+
+  removerContato: (clienteId: string, contatoId: string) =>
+    api.delete<ClienteDTO>(`/v1/clientes/${clienteId}/contatos/${contatoId}`).then(r => r.data),
 }
