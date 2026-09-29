@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { osApi } from '../../api/os'
+import Modal from '../../components/Modal'
 import type { OrdemServicoResumoDTO, StatusOS } from '../../types/os'
 import type { PageResponse } from '../../types/pagination'
 
@@ -51,6 +52,10 @@ export default function OsLista() {
   const [dataFinal, setDataFinal] = useState('')
   const [ordenacao, setOrdenacao] = useState<Ordenacao>('numero')
 
+  const [modoSelecao, setModoSelecao] = useState(false)
+  const [selecionadas, setSelecionadas] = useState<string[]>([])
+  const [modalUnir, setModalUnir] = useState(false)
+
   useEffect(() => {
     setCarregando(true)
     setErro(null)
@@ -73,6 +78,16 @@ export default function OsLista() {
     setBuscaAplicada(busca)
   }
 
+  const toggleModoSelecao = () => {
+    setModoSelecao(m => !m)
+    setSelecionadas([])
+  }
+
+  const alternarSelecao = (os: OrdemServicoResumoDTO) =>
+    setSelecionadas(prev => (prev.includes(os.id) ? prev.filter(id => id !== os.id) : [...prev, os.id]))
+
+  const clienteTravado = pagina?.content.find(os => selecionadas.includes(os.id))?.clienteId
+
   return (
     <div className="fade-in">
       <div className="page-header">
@@ -80,7 +95,17 @@ export default function OsLista() {
           <div className="page-title">Ordens de Serviço</div>
           <div className="page-sub">// {pagina?.totalElements ?? 0} no total</div>
         </div>
-        <button className="btn btn-amber" onClick={() => navigate('/os/novo')}>+ Nova OS</button>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {selecionadas.length >= 2 && (
+            <button className="btn btn-sm btn-amber" onClick={() => setModalUnir(true)}>
+              Unir selecionadas ({selecionadas.length})
+            </button>
+          )}
+          <button className="btn btn-sm" onClick={toggleModoSelecao}>
+            {modoSelecao ? 'Cancelar seleção' : 'Selecionar'}
+          </button>
+          <button className="btn btn-amber" onClick={() => navigate('/os/novo')}>+ Nova OS</button>
+        </div>
       </div>
 
       <form onSubmit={onBuscar} style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -129,6 +154,7 @@ export default function OsLista() {
           <table className="table">
             <thead>
               <tr>
+                {modoSelecao && <th></th>}
                 <th>Número</th>
                 <th>Cliente</th>
                 <th>Solicitante</th>
@@ -136,27 +162,44 @@ export default function OsLista() {
               </tr>
             </thead>
             <tbody>
-              {pagina.content.map(os => (
-                <tr key={os.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/os/${os.id}`)}>
-                  <td>{os.numero}</td>
-                  <td>
-                    {os.clienteNome ?? '—'}
-                    {os.clienteDocumento && (
-                      <span style={{ color: 'var(--text3)' }}> ({formatarDocumento(os.clienteDocumento)})</span>
+              {pagina.content.map(os => {
+                const podeUnir = os.status !== 'CONCLUIDA' && os.status !== 'CANCELADA'
+                const bloqueadaPorCliente = !!clienteTravado && os.clienteId !== clienteTravado
+                return (
+                  <tr key={os.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/os/${os.id}`)}>
+                    {modoSelecao && (
+                      <td onClick={e => e.stopPropagation()}>
+                        {podeUnir && (
+                          <input
+                            type="checkbox"
+                            checked={selecionadas.includes(os.id)}
+                            disabled={bloqueadaPorCliente}
+                            title={bloqueadaPorCliente ? 'Unir só funciona entre OS do mesmo cliente' : undefined}
+                            onChange={() => alternarSelecao(os)}
+                          />
+                        )}
+                      </td>
                     )}
-                  </td>
-                  <td>{os.solicitante ?? '—'}</td>
-                  <td>
-                    <span className={`badge ${STATUS_BADGE[os.status]}`}>{STATUS_LABEL[os.status]}</span>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
-                      Aberta em: {formatarDataHora(os.dataAbertura)}
-                      {os.dataAtualizacao && os.dataAtualizacao !== os.dataAbertura && (
-                        <><br />Atualizada em: {formatarDataHora(os.dataAtualizacao)}</>
+                    <td>{os.numero}</td>
+                    <td>
+                      {os.clienteNome ?? '—'}
+                      {os.clienteDocumento && (
+                        <span style={{ color: 'var(--text3)' }}> ({formatarDocumento(os.clienteDocumento)})</span>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>{os.solicitante ?? '—'}</td>
+                    <td>
+                      <span className={`badge ${STATUS_BADGE[os.status]}`}>{STATUS_LABEL[os.status]}</span>
+                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+                        Aberta em: {formatarDataHora(os.dataAbertura)}
+                        {os.dataAtualizacao && os.dataAtualizacao !== os.dataAbertura && (
+                          <><br />Atualizada em: {formatarDataHora(os.dataAtualizacao)}</>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
 
@@ -177,6 +220,65 @@ export default function OsLista() {
           </div>
         </>
       )}
+
+      {modalUnir && (
+        <UnirOSModal
+          quantidade={selecionadas.length}
+          onClose={() => setModalUnir(false)}
+          onConfirmar={async solicitante => {
+            const novaOS = await osApi.unir({ osOrigemIds: selecionadas, solicitante })
+            navigate(`/os/${novaOS.id}`)
+          }}
+        />
+      )}
     </div>
+  )
+}
+
+function UnirOSModal({
+  quantidade, onClose, onConfirmar,
+}: {
+  quantidade: number
+  onClose: () => void
+  onConfirmar: (solicitante?: string) => Promise<void>
+}) {
+  const [solicitante, setSolicitante] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  const confirmar = async () => {
+    setSalvando(true)
+    setErro(null)
+    try {
+      await onConfirmar(solicitante.trim() || undefined)
+    } catch (e: unknown) {
+      const msg =
+        (e as { response?: { data?: { message?: string } } })
+          ?.response?.data?.message ?? 'Não foi possível unir as OS.'
+      setErro(msg)
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <Modal
+      title="Unir OS"
+      subtitle={`Cria uma OS nova com os itens das ${quantidade} OS selecionadas. As origens ficam canceladas, apontando pra OS nova.`}
+      onClose={onClose}
+    >
+      {erro && <div className="error-banner">{erro}</div>}
+
+      <div className="form-field" style={{ marginBottom: 12 }}>
+        <label className="form-label">Solicitante (opcional)</label>
+        <input className="form-input" value={solicitante} onChange={e => setSolicitante(e.target.value)} />
+      </div>
+
+      <div className="modal-footer">
+        <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+        <button type="button" className="btn btn-amber" disabled={salvando} onClick={confirmar}>
+          {salvando ? '// unindo...' : 'Unir'}
+        </button>
+      </div>
+    </Modal>
   )
 }

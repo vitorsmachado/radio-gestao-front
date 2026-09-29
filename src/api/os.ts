@@ -11,6 +11,7 @@ import type {
   ReordenarFilaRequest,
   SalvarAvaliacaoTecnicaRequest,
   SepararOSRequest,
+  UnirOSRequest,
 } from '../types/os'
 import type { PageResponse } from '../types/pagination'
 
@@ -44,6 +45,10 @@ export const osApi = {
 
   separar: (id: string, data: SepararOSRequest) =>
     api.post<OrdemServicoDTO[]>(`/v1/ordens-servico/${id}/separar`, data).then(r => r.data),
+
+  /** Cria uma OS nova com os itens de todas as OS listadas — precisam ser do mesmo cliente. */
+  unir: (data: UnirOSRequest) =>
+    api.post<OrdemServicoDTO>('/v1/ordens-servico/unir', data).then(r => r.data),
 
   listarFilaManutencao: () =>
     api.get<FilaManutencaoOSDTO[]>('/v1/ordens-servico/fila-manutencao').then(r => r.data),

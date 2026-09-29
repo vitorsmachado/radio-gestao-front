@@ -98,6 +98,12 @@ export interface SepararOSRequest {
   solicitante?: string
 }
 
+/** Cria uma OS nova com os itens de todas as OS listadas — precisam ser do mesmo cliente. */
+export interface UnirOSRequest {
+  osOrigemIds: string[]
+  solicitante?: string
+}
+
 /** Edição livre da OS — permitida em qualquer status, menos CONCLUIDA. */
 export interface AtualizarOrdemServicoRequest {
   clienteId: string
