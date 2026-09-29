@@ -3,6 +3,15 @@ export interface ConfiguracaoDTO {
   prazoGarantiaPecaDias: number
   prazoGarantiaEquipamentoDias: number
   prazoGarantiaAcessorioDias: number
+  nomeEmpresa: string
+  razaoSocialEmpresa?: string
+  documentoEmpresa: string
+  inscricaoEstadualEmpresa?: string
+  enderecoEmpresa?: string
+  bairroEmpresa?: string
+  cidadeEmpresa?: string
+  telefoneEmpresa?: string
+  emailEmpresa?: string
 }
 
 export interface AtualizarConfiguracaoRequest {
@@ -10,4 +19,13 @@ export interface AtualizarConfiguracaoRequest {
   prazoGarantiaPecaDias: number
   prazoGarantiaEquipamentoDias: number
   prazoGarantiaAcessorioDias: number
+  nomeEmpresa: string
+  razaoSocialEmpresa?: string
+  documentoEmpresa: string
+  inscricaoEstadualEmpresa?: string
+  enderecoEmpresa?: string
+  bairroEmpresa?: string
+  cidadeEmpresa?: string
+  telefoneEmpresa?: string
+  emailEmpresa?: string
 }
