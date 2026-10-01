@@ -2,7 +2,7 @@
 
 Interface web do sistema de gestão de uma empresa de rádio comunicação — acompanha o fluxo completo de uma ordem de serviço, do recebimento do equipamento até a entrega, incluindo orçamento, garantia e configurações administráveis.
 
-> Backend (Spring Boot + Java): [radio-gestao](https://github.com/vitrosmachado/radio-gestao)
+> Backend (Spring Boot + Java): [radio-gestao](https://github.com/vitorsmachado/radio-gestao)
 
 ![demo](docs/demo.gif)
 
@@ -34,7 +34,7 @@ src/
 
 ## Como rodar localmente
 
-Pré-requisito: Node.js 20+. O [backend](https://github.com/vitrosmachado/radio-gestao) precisa estar rodando (padrão: `http://localhost:8080/api`).
+Pré-requisito: Node.js 20+. O [backend](https://github.com/vitorsmachado/radio-gestao) precisa estar rodando (padrão: `http://localhost:8080/api`).
 
 ```bash
 npm install
