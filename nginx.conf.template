@@ -1,0 +1,17 @@
+server {
+    listen ${PORT};
+    root /usr/share/nginx/html;
+
+    # Chamadas da API vão para o back-end — mesmo domínio, sem CORS
+    location /api/ {
+        proxy_pass ${BACKEND_URL};
+        proxy_set_header Host $proxy_host;
+        proxy_ssl_server_name on;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # SPA: qualquer rota desconhecida cai no index.html (React Router)
+    location / {
+        try_files $uri /index.html;
+    }
+}
