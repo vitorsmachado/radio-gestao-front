@@ -158,6 +158,8 @@ export interface ItemEntradaDTO {
   garantia: boolean
   status: StatusItemEntrada
   motivoNaoAutorizado?: string
+  /** Recusado pelo cliente — continua no orçamento, mas fora do total e do PDF */
+  naoAutorizado?: boolean
   resultadoAvaliacao?: ResultadoAvaliacao
   detalheAjuste?: string
   defeitoEncontrado?: string

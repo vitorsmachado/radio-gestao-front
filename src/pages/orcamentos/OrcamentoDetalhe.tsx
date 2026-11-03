@@ -96,15 +96,18 @@ export default function OrcamentoDetalhe() {
 
   useEffect(carregar, [id])
 
-  const consolidado = useMemo(() => (orc ? consolidar(orc.itens) : []), [orc])
+  // Item recusado pelo cliente continua visível, mas não entra nas somas
+  const itensCobrados = useMemo(() => (orc?.itens ?? []).filter(item => !item.naoAutorizado), [orc])
+
+  const consolidado = useMemo(() => consolidar(itensCobrados), [itensCobrados])
 
   const totalMaoDeObra = useMemo(() => {
-    const linhas = (orc?.itens ?? []).flatMap(item => item.itensConserto).filter(ic => ic.tipo === 'MAO_DE_OBRA')
+    const linhas = itensCobrados.flatMap(item => item.itensConserto).filter(ic => ic.tipo === 'MAO_DE_OBRA')
     return {
       quantidade: linhas.reduce((s, ic) => s + ic.quantidade, 0),
       valor: linhas.reduce((s, ic) => s + ic.valorTotal, 0),
     }
-  }, [orc])
+  }, [itensCobrados])
 
   const salvarCondicoes = async (dados: AtualizarOrcamentoRequest) => {
     if (!id) return
@@ -528,7 +531,7 @@ function ItemOrcamentoCard({
   }
 
   return (
-    <div className="section-card" style={{ marginBottom: 10 }}>
+    <div className="section-card" style={{ marginBottom: 10, opacity: item.naoAutorizado ? 0.6 : 1 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
         <div>
           <div style={{ fontWeight: 600 }}>{item.descricao}</div>
@@ -537,10 +540,20 @@ function ItemOrcamentoCard({
             {item.numeroSerie ? ` · S/N ${item.numeroSerie}` : ''}
           </div>
         </div>
-        {item.resultadoAvaliacao && (
-          <span className="badge b-blue">{RESULTADO_AVALIACAO_LABEL[item.resultadoAvaliacao]}</span>
-        )}
+        <div style={{ display: 'flex', gap: 6 }}>
+          {item.resultadoAvaliacao && (
+            <span className="badge b-blue">{RESULTADO_AVALIACAO_LABEL[item.resultadoAvaliacao]}</span>
+          )}
+          {item.naoAutorizado && <span className="badge b-red">Não autorizado</span>}
+        </div>
       </div>
+
+      {item.naoAutorizado && (
+        <div style={{ fontSize: 13, marginBottom: 4 }}>
+          <span className="form-label" style={{ display: 'inline' }}>Recusado pelo cliente: </span>
+          {item.motivoNaoAutorizado ?? '—'} · fora do total e do PDF
+        </div>
+      )}
 
       {item.defeitoEncontrado && (
         <div style={{ fontSize: 13, marginBottom: 4 }}>
