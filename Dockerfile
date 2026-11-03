@@ -13,3 +13,5 @@ FROM nginx:1.27-alpine
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 ENV PORT=80
+# Padrão = back-end da demo; sobrescreva com a variável BACKEND_URL no Railway
+ENV BACKEND_URL=https://radio-gestao-production.up.railway.app
